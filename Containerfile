@@ -14,7 +14,7 @@ RUN sudo -u builder makepkg -s --noconfirm && \
     # Verify package was created
     ls -lah *.pkg.tar.zst && \
     # Extract and check contents
-    tar -tzf bootupd-*.pkg.tar.zst | grep -E "(libexec|bin|lib/bootupd|systemd)" && \
+    tar -I zstd -tf bootupd-*.pkg.tar.zst | grep -E "(libexec|bin|lib/bootupd|systemd)" && \
     # Install the package
     pacman -U --noconfirm *.pkg.tar.zst && \
     # Comprehensive verification
