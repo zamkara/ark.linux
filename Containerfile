@@ -13,8 +13,8 @@ WORKDIR /home/builder/bootupd
 RUN sudo -u builder makepkg -s --noconfirm && \
     # Verify package was created
     ls -lah *.pkg.tar.zst && \
-    # Extract and check contents
-    tar -I zstd -tf bootupd-*.pkg.tar.zst | grep -E "(libexec|bin|lib/bootupd|systemd)" && \
+    # Extract and check contents (only bootupd, not debug)
+    tar -I zstd -tf bootupd-0.2.32-2-x86_64.pkg.tar.zst | grep -E "(libexec|bin|lib/bootupd|systemd)" && \
     # Install the package
     pacman -U --noconfirm *.pkg.tar.zst && \
     # Comprehensive verification
