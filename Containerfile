@@ -14,10 +14,7 @@ RUN pacman -Syu --noconfirm && \
 # Copy final image from base
 FROM ghcr.io/apollo-linux/apollo-nvidia:latest
 
-# Copy bootupd dari builder stage
-COPY --from=builder /usr/libexec/bootupd /usr/libexec/bootupd
-COPY --from=builder /usr/bin/bootupctl /usr/bin/bootupctl
-COPY --from=builder /usr/lib/bootupd /usr/lib/bootupd
-COPY --from=builder /usr/lib/systemd/system/bootloader-update.service /usr/lib/systemd/system/
-
-RUN chmod +x /usr/libexec/bootupd /usr/bin/bootupctl
+# Copy bootupd packages from builder stage
+COPY --from=builder /tmp/bootupd/*.pkg.tar.zst /tmp/
+RUN pacman -U --noconfirm /tmp/*.pkg.tar.zst && \
+    rm /tmp/*.pkg.tar.zst
