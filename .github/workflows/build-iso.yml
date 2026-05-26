@@ -19,6 +19,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y podman xorriso
       
+      - name: Build custom Apollo image with bootupd
+        run: |
+          sudo podman build -t apollo-nvidia-bootupd:latest -f Containerfile .
+      
       - name: Create bootable image
         run: |
           mkdir -p output
@@ -28,7 +32,7 @@ jobs:
             --pid=host \
             --volume /dev:/dev \
             --volume $(pwd)/output:/output \
-            ghcr.io/apollo-linux/apollo-nvidia:latest \
+            apollo-nvidia-bootupd:latest \
             bootc install to-disk --via-loopback \
             --filesystem btrfs \
             /output/apollo-nvidia.img
