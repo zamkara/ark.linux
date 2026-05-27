@@ -29,8 +29,6 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: true
-      - name: Set up dependencies
-        run: sudo apt-get update && sudo apt-get install -y docker.io
       - name: Build custom Apollo image with bootupd
         run: sudo docker build --build-arg BASE_IMAGE=ghcr.io/apollo-linux/${{ matrix.variant }}:latest -t ghcr.io/${{ github.repository }}:${{ matrix.variant }} -f Containerfile .
       - name: Log in to the Container registry
