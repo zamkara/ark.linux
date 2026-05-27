@@ -46,7 +46,7 @@ RUN chmod +x /usr/libexec/bootupd /usr/bin/bootupctl && \
     echo "✓ bootupd successfully installed in multiple paths" && \
     echo -e '#!/bin/bash\necho "dummy-1.0-1,1700000000 "' > /usr/bin/rpm && \
     chmod +x /usr/bin/rpm && \
-    mkdir -p /usr/lib/efi/dummy/1/EFI/BOOT && touch /usr/lib/efi/dummy/1/EFI/BOOT/BOOTX64.EFI && \
+    mkdir -p /usr/lib/efi/dummy/1/EFI/BOOT && grub-mkimage -O x86_64-efi -o /usr/lib/efi/dummy/1/EFI/BOOT/BOOTX64.EFI -p /boot/grub fat ext2 btrfs part_gpt part_msdos normal linux efi_gop search configfile && \
     (bootupctl backend generate-update-metadata / || true) && \
     rm -f /usr/bin/rpm && \
     echo 'VERSION_ID="rolling"' >> /usr/lib/os-release

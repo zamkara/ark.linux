@@ -529,7 +529,7 @@ fn build_ui(app: &Application) {
                         "-v", "/var/lib/containers:/var/lib/containers",
                         "-v", "/dev:/dev",
                         &variant,
-                        "bootc", "install", "to-disk", "--wipe", "--filesystem", "btrfs", &disk
+                        "bootc", "install", "to-disk", "--generic-image", "--wipe", "--filesystem", "btrfs", &disk
                     ])
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
