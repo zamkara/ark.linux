@@ -1,0 +1,10 @@
+# Signature: emFta2FyYQ==
+[Desktop Entry]
+Name=Apollo Installer
+Comment=Install Apollo Linux to your system
+Exec=alga
+Icon=com.zamkara.alga
+Terminal=false
+Type=Application
+Categories=System;Settings;
+StartupNotify=true

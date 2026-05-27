@@ -1,4 +1,3 @@
-// Signature: emFta2FyYQ==
 use libadwaita::prelude::*;
 use gtk::prelude::*;
 use libadwaita::{Application, ApplicationWindow, HeaderBar, PreferencesGroup, ActionRow};
@@ -30,16 +29,13 @@ fn main() {
 fn build_ui(app: &Application) {
     let provider = gtk::CssProvider::new();
     provider.load_from_data("
-        window, dialog, popover, box {
-            box-shadow: none;
-        }
+        * { box-shadow: none !important; }
         .log-container, .log-container textview, .log-container text { 
             border-radius: 12px; 
         }
         .log-wrapper {
-            background: @card_bg_color;
             border-radius: 12px;
-            padding: 12px;
+            overflow: hidden;
             border: none;
         }
     ");
@@ -86,9 +82,14 @@ fn build_ui(app: &Application) {
     content1.set_margin_end(24);
     content1.set_vexpand(true);
     
-    // Icon at the top
+    let icon_path = if std::path::Path::new("/usr/share/icons/hicolor/scalable/apps/alga.svg").exists() {
+        "/usr/share/icons/hicolor/scalable/apps/alga.svg"
+    } else {
+        "data/alga.svg"
+    };
+
     let app_icon = Image::builder()
-        .file("/usr/share/icons/MoreWaita/scalable/legacy/applications-development.svg")
+        .file(icon_path)
         .pixel_size(96)
         .halign(gtk::Align::Center)
         .margin_bottom(24)
@@ -443,94 +444,13 @@ fn build_ui(app: &Application) {
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                let _ = sender.send(format!("Starting installation to {}...", disk));
-                
-                let mut attempt = 1;
-                let max_attempts = 3;
-                let mut pull_success = false;
-
-                // Check if image already exists locally (e.g., loaded offline or cached)
-                let check_exists = tokio::process::Command::new("pkexec")
-                    .args(["podman", "image", "exists", &variant])
-                    .status()
-                    .await;
-                    
-                if let Ok(status) = check_exists {
-                    if status.success() {
-                        let _ = sender.send(format!("Image {} already exists locally. Skipping download...", variant));
-                        pull_success = true;
-                    }
-                }
-
-                while !pull_success && attempt <= max_attempts {
-                    let _ = sender.send(format!("Pulling {} (Attempt {}/{})...", variant, attempt, max_attempts));
-                    
-                    let mut child_pull = tokio::process::Command::new("pkexec")
-                        .args(["podman", "pull", &variant])
-                        .stdout(Stdio::piped())
-                        .stderr(Stdio::piped())
-                        .spawn()
-                        .expect("Failed to spawn pkexec podman pull");
-
-                    let mut stdout_pull = BufReader::new(child_pull.stdout.take().unwrap()).lines();
-                    let mut stderr_pull = BufReader::new(child_pull.stderr.take().unwrap()).lines();
-
-                    let mut user_cancelled = false;
-                    loop {
-                        tokio::select! {
-                            _ = &mut kill_rx => {
-                                let _ = child_pull.kill().await;
-                                let _ = sender.send("EOF_CANCEL".to_string());
-                                user_cancelled = true;
-                                break;
-                            }
-                            line = stdout_pull.next_line() => {
-                                match line {
-                                    Ok(Some(l)) => { let _ = sender.send(l); }
-                                    Ok(None) => break,
-                                    Err(_) => break,
-                                }
-                            }
-                            line = stderr_pull.next_line() => {
-                                if let Ok(Some(l)) = line { let _ = sender.send(l); }
-                            }
-                        }
-                    }
-                    
-                    if user_cancelled {
-                        return;
-                    }
-                    
-                    let status = child_pull.wait().await;
-                    if let Ok(s) = status {
-                        if s.success() {
-                            pull_success = true;
-                            break;
-                        }
-                    }
-                    
-                    attempt += 1;
-                    if attempt <= max_attempts {
-                        let _ = sender.send("Network error detected. Retrying in 3 seconds...".to_string());
-                        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-                    }
-                }
-
-                if !pull_success {
-                    let _ = sender.send("EOF_ERROR".to_string());
-                    return;
-                }
-
-                let _ = sender.send(format!("Writing {} to {}...", variant, disk));
+                let bootc_cmd = format!(
+                    "for p in {}?*; do umount -f $p 2>/dev/null; done; bootc install to-disk --generic-image --wipe --filesystem btrfs --source-imgref docker://{} {}", 
+                    disk, variant, disk
+                );
                 
                 let mut child_install = tokio::process::Command::new("pkexec")
-                    .args([
-                        "podman", "run", "--rm", "--privileged", "--pid=host",
-                        "-v", "/var/lib/containers:/var/lib/containers",
-                        "-v", "/dev:/dev",
-                        &variant,
-                        "bootc", "install", "to-disk", "--generic-image", "--wipe", "--filesystem", "btrfs", &disk
-                    ])
+                    .args(["bash", "-c", &bootc_cmd])
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
                     .spawn()

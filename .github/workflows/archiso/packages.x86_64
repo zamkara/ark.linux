@@ -115,7 +115,11 @@ gnome-shell
 gnome-shell-extensions
 xorg-server
 grub
-podman
+bootc
+ostree
+skopeo
+dosfstools
+btrfs-progs
 zenity
 gtk4
 libadwaita
