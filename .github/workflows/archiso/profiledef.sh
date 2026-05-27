@@ -30,7 +30,6 @@ file_permissions=(
   ["/etc/sudoers"]="0:0:400"
   ["/etc/locale.gen"]="0:0:644"
   ["/usr/bin/alga"]="0:0:755"
-  ["/etc/skel/Desktop/com.zamkara.alga.desktop"]="0:0:755"
   ["/usr/share/applications/com.zamkara.alga.desktop"]="0:0:755"
   ["/etc/pacman.d/hooks/99-hide-apps.hook"]="0:0:644"
 )

@@ -1,4 +1,4 @@
 # Signature: emFta2FyYQ==
 #!/bin/bash
 
-locale-gen -a
+locale-gen
