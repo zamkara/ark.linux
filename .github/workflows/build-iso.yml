@@ -61,7 +61,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y podman
       - name: Build Live Installer ISO
         run: |
-          sudo podman run --rm --privileged -v $(pwd):/work -w /work docker.io/archlinux:latest bash -c "pacman -Syu --noconfirm archiso rust pkgconf gtk4 libadwaita && cd workflows/alga && cargo build --release && mkdir -p ../archiso/airootfs/usr/bin && cp target/release/alga ../archiso/airootfs/usr/bin/alga && cd ../.. && mkarchiso -v -w workdir/ -o out/ workflows/archiso/"
+          sudo podman run --rm --privileged -v $(pwd):/work -w /work docker.io/archlinux:latest bash -c "pacman -Syu --noconfirm archiso rust pkgconf gtk4 libadwaita && cd .github/workflows/alga && cargo build --release && mkdir -p ../archiso/airootfs/usr/bin && cp target/release/alga ../archiso/airootfs/usr/bin/alga && cd ../../.. && mkarchiso -v -w workdir/ -o out/ .github/workflows/archiso/"
           sudo chown -R $USER:$USER out/
           mv out/*.iso out/apollo-installer.iso
       - name: Upload artifact
