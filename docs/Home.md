@@ -29,3 +29,6 @@ This knowledge base serves as a permanent reference for developers and contribut
 
 8. **[Troubleshooting](08-Troubleshooting.md)**
    Diagnostic procedures for kernel locks, boot failures, and accessing emergency TTY consoles during installation.
+
+9. **[Local Testing and Virtualization](09-Local-Testing.md)**
+   Guidelines and prerequisites for testing Apollo OS ISO artifacts locally using hypervisors like GNOME Boxes and QEMU.
