@@ -37,16 +37,15 @@ jobs:
             --filesystem btrfs \
             /output/apollo-nvidia.img
       
-      - name: Convert to ISO
+      - name: Compress Image
         run: |
           cd output
-          sudo xorriso -as mkisofs -o apollo-nvidia.iso \
-            -isohybrid-mbr apollo-nvidia.img \
-            apollo-nvidia.img
-          ls -lh apollo-nvidia.iso
+          sudo apt-get install -y zstd
+          sudo zstd -T0 -10 apollo-nvidia.img -o apollo-nvidia.img.zst
+          ls -lh apollo-nvidia.img.zst
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apollo-nvidia-iso
-          path: output/apollo-nvidia.iso
+          name: apollo-nvidia-img
+          path: output/apollo-nvidia.img.zst
