@@ -116,6 +116,7 @@ gnome-shell-extensions
 xorg-server
 grub
 bootc
+bootupd
 ostree
 skopeo
 podman

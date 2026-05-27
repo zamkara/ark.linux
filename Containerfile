@@ -1,31 +1,14 @@
 # Signature: emFta2FyYQ==
 ARG BASE_IMAGE=ghcr.io/apollo-linux/apollo-nvidia:latest
-FROM ${BASE_IMAGE} as builder
-
-RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm base-devel git sudo && \
-    useradd -m builder && \
-    echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-WORKDIR /home/builder
-WORKDIR /home/builder
-COPY aur-packages/*.pkg.tar.zst ./
-RUN pacman -U --noconfirm *.pkg.tar.zst
-
-# Copy final image from base
 FROM ${BASE_IMAGE}
 
-# Install runtime dependencies including ostree, skopeo and bootc
-RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm util-linux openssl grub efibootmgr dosfstools ostree skopeo btrfs-progs podman composefs
+COPY aur-packages/*.pkg.tar.zst /tmp/
 
-# Copy bootupd and bootc from builder stage
-COPY --from=builder /usr/libexec/bootupd /usr/libexec/bootupd
-COPY --from=builder /usr/bin/bootupctl /usr/bin/bootupctl
-COPY --from=builder /usr/lib/bootupd /usr/lib/bootupd
-COPY --from=builder /usr/bin/bootc /usr/bin/bootc
-COPY --from=builder /usr/lib/systemd/system/bootloader-update.service /usr/lib/systemd/system/
-COPY --from=builder /usr/lib/systemd/system/bootc*.service /usr/lib/systemd/system/
+# Install runtime dependencies including ostree, skopeo, bootc, and bootupd
+RUN pacman -Syu --noconfirm && \
+    pacman -S --noconfirm util-linux openssl grub efibootmgr dosfstools ostree skopeo btrfs-progs podman composefs && \
+    pacman -U --noconfirm /tmp/*.pkg.tar.zst && \
+    rm -f /tmp/*.pkg.tar.zst
 
 # Ensure bootupd is executable and accessible from common paths
 # bootc looks for bootupd in PATH during installation
