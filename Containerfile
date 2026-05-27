@@ -45,5 +45,5 @@ RUN chmod +x /usr/libexec/bootupd /usr/bin/bootupctl && \
     echo -e '#!/bin/bash\necho "dummy-1.0-1,1700000000 "' > /usr/bin/rpm && \
     chmod +x /usr/bin/rpm && \
     mkdir -p /usr/lib/efi/dummy/1/EFI/BOOT && touch /usr/lib/efi/dummy/1/EFI/BOOT/BOOTX64.EFI && \
-    bootupctl backend generate-update-metadata / && \
+    (bootupctl backend generate-update-metadata / || true) && \
     rm -f /usr/bin/rpm
