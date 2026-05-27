@@ -73,8 +73,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: nightly
-          name: "Apollo Linux Nightly Build"
+          tag_name: build-${{ github.sha }}
+          name: "Apollo Linux Build (${{ github.sha }})"
           files: out/apollo-installer.iso
           prerelease: true
           make_latest: true
