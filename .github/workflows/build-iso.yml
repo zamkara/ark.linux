@@ -151,12 +151,48 @@ jobs:
         with:
           name: apollo-iso
           path: out/apollo-installer.iso
+      - name: Upload ISO to Ranoz
+        id: ranoz-upload
+        run: |
+          FILE_PATH="out/apollo-installer.iso"
+          FILENAME="apollo-installer-${{ github.sha }}.iso"
+          SIZE=$(stat -c%s "$FILE_PATH")
+          
+          RESPONSE=$(curl -s -X POST https://ranoz.gg/api/v1/files/upload_url -H "Content-Type: application/json" -d "{
+            \"filename\": \"$FILENAME\",
+            \"size\": $SIZE
+          }")
+          
+          UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.data.upload_url')
+          FILE_ID=$(echo "$RESPONSE" | jq -r '.data.id')
+          FILE_URL=$(echo "$RESPONSE" | jq -r '.data.url // empty')
+          
+          if [ -z "$FILE_URL" ]; then
+            FILE_URL="https://ranoz.gg/api/v1/files/$FILE_ID"
+          fi
+          
+          echo "Uploading $FILENAME ($SIZE bytes)..."
+          curl -T "$FILE_PATH" "$UPLOAD_URL"
+          
+          echo "DOWNLOAD_URL=$FILE_URL" >> $GITHUB_OUTPUT
       - name: Create Nightly Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: build-${{ github.sha }}
           name: "Apollo Linux Build (${{ github.sha }})"
+          body: |
+            ## Apollo OS Release 🚀
+            
+            This is an automated nightly build of Apollo OS from commit ${{ github.sha }}.
+            
+            ### 📜 Changelog
+            View the latest source changes here: [Commit History](https://github.com/${{ github.repository }}/commits/main)
+            
+            ### 💾 Downloads
+            You can download the ISO from the GitHub Assets below, or use our high-speed alternative mirror:
+            
+            - **Alternative Mirror (Ranoz - Valid for 1 month):** ${{ steps.ranoz-upload.outputs.DOWNLOAD_URL }}
           files: out/apollo-installer.iso
           prerelease: true
           make_latest: true
