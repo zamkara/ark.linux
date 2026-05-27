@@ -1,4 +1,4 @@
-# Signature: emFta2FyYQ==
+
 # Apollo Linux Unofficial ISO Builder
 
 This repository serves as an unofficial automated builder for [Apollo Linux](https://github.com/apollo-linux/apollo). It is designed to create a Live Installer ISO that seamlessly deploys the Apollo OCI bootc container to your disk.
