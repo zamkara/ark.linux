@@ -10,20 +10,32 @@ fi
 
 zenity --info --title="Apollo Linux Installer" --text="Welcome to the Apollo Linux Installer.\nThis will install the bootc image to your selected disk."
 
-# Get list of disks (ignoring loop devices and ramdisks)
-DISKS=$(lsblk -d -n -o NAME,SIZE,MODEL | grep -v "loop" | grep -v "ram" | awk '{print "/dev/"$1" ("$2" "$3" "$4")"}')
+# Find the device the Live ISO booted from (e.g. /dev/sdb1 -> /dev/sdb)
+BOOT_DEV=$(findmnt -n -o SOURCE /run/archiso/bootmnt | sed -E 's/p?[0-9]+$//')
+
+# Get list of disks (ignoring loop, ram, usb, and the boot device)
+DISKS=""
+while read -r line; do
+    eval "$line"
+    # Skip the boot device
+    if [[ "/dev/$NAME" == "$BOOT_DEV" || "/dev/$NAME" == "${BOOT_DEV%p}" ]]; then
+        continue
+    fi
+    if [[ "$TYPE" == "disk" && "$RM" == "0" && "$TRAN" != "usb" && ! "$NAME" =~ ^(loop|zram|ram|sr) ]]; then
+        if [ -n "$MODEL" ]; then
+            DISKS+="FALSE\n/dev/$NAME ($SIZE $MODEL)\n"
+        else
+            DISKS+="FALSE\n/dev/$NAME ($SIZE)\n"
+        fi
+    fi
+done <<< "$(lsblk -d -n -P -o NAME,SIZE,MODEL,RM,TRAN,TYPE)"
 
 if [ -z "$DISKS" ]; then
-    zenity --error --text="No disks found!"
+    zenity --error --text="No suitable internal disks found!"
     exit 1
 fi
 
-DISK_OPTIONS=""
-while IFS= read -r line; do
-    DISK_OPTIONS="$DISK_OPTIONS FALSE \"$line\""
-done <<< "$DISKS"
-
-CHOICE=$(echo "$DISKS" | awk '{print "FALSE\n"$0}' | xargs zenity --list --title="Select Target Disk" --text="Select the disk to install Apollo Linux to. WARNING: THIS WILL ERASE THE DISK!" --radiolist --column="Select" --column="Disk")
+CHOICE=$(echo -e "$DISKS" | xargs zenity --list --title="Select Target Disk" --text="Select the disk to install Apollo Linux to. WARNING: THIS WILL ERASE THE DISK!" --radiolist --column="Select" --column="Disk")
 
 if [ -z "$CHOICE" ]; then
     zenity --info --text="Installation cancelled."
@@ -51,10 +63,18 @@ else
     IMAGE="ghcr.io/zamkara/apollo.builder:apollo"
 fi
 
+# Enable pipefail to catch errors inside the subshell
+set -o pipefail
+
 # Run the installation
 (
 echo "10"; echo "# Pulling container image $IMAGE from the network..."
 podman pull $IMAGE > /tmp/install.log 2>&1
+if [ $? -ne 0 ]; then
+    echo "100"; echo "# Failed to pull image!"
+    exit 1
+fi
+
 echo "40"; echo "# Installing OS to $TARGET_DISK..."
 podman run --rm --privileged --pid=host \
   --security-opt label=type:unconfined_t \
@@ -65,8 +85,9 @@ podman run --rm --privileged --pid=host \
 
 if [ $? -eq 0 ]; then
     echo "100"; echo "# Installation Complete!"
+    exit 0
 else
-    echo "100"; echo "# Installation Failed! See /tmp/install.log"
+    echo "100"; echo "# Installation Failed!"
     exit 1
 fi
 ) | zenity --progress --title="Installing Apollo Linux" --text="Starting installation..." --percentage=0 --auto-close --auto-kill
@@ -74,5 +95,5 @@ fi
 if [ $? -eq 0 ]; then
     zenity --info --title="Success" --text="Installation completed successfully!\nYou can now reboot your system."
 else
-    zenity --error --title="Error" --text="Installation failed. Please check the logs in /tmp/install.log"
+    zenity --error --title="Error" --text="Installation failed! Please check the logs.\n\nLast 15 lines of /tmp/install.log:\n$(tail -n 15 /tmp/install.log)"
 fi
