@@ -18,5 +18,17 @@ Dokumentasi ini ditulis sebagai pedoman abadi. Jika Anda terputus dari jaringan,
 4. **[Alur Git & Dual Remote](Git-Workflow-and-Remotes.md)**
    Penjelasan mengapa repositori ini memiliki *remote* `gitlab` dan `origin` (GitHub), serta kesepakatan abadi bahwa **GitHub** adalah pabrik utama yang merakit ISO Apollo OS.
 
+5. **[Pabrik ISO & GitHub Actions](05-the-builder-mechanics.md)**
+   Bedah tuntas *Containerfile* dan *workflow* GitHub Actions. Membedah bagaimana `podman` dan `bootc-image-builder` menyulap kode menjadi ISO yang siap pakai.
+
+6. **[Anatomi Kode Installer Alga](06-alga-source-code-deep-dive.md)**
+   Penyelaman dalam terhadap kode sumber `/src/main.rs`. Bagaimana `tokio`, *multithreading*, *glib channels*, dan logika *progress bar* bekerja menjaga UI tidak *freeze*.
+
+7. **[OSTree & Bootc Mastery](07-ostree-and-bootc-mastery.md)**
+   Penguasaan atas konsep partisi *A/B*, transaksi pemutakhiran *atomic* (anti-rusak), serta direktori apa saja yang *read-only* (imutabel) versus *read-write*.
+
+8. **[Kitab Darurat: Troubleshooting & Debugging](08-troubleshooting-and-debugging.md)**
+   Panduan ekstrem saat terjadi kiamat sistem: menembus *TTY console*, meretas penguncian (*lock*) *cache btrfs*, dan menganalisis log *kernel panic* menggunakan `strace`!
+
 ---
 *Dokumentasi ini dijaga keakuratannya layaknya sebuah jurnal sejarah. Setiap kalimat dalam halaman-halaman berikutnya adalah hukum operasional yang tidak boleh dilupakan.*
