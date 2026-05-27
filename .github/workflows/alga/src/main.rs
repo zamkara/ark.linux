@@ -389,14 +389,24 @@ fn build_ui(app: &Application) {
         stack.set_visible_child_name("page3");
     }));
     
-    cancel_btn.connect_clicked(clone!(@strong cancel_sender => move |_| {
+    cancel_btn.connect_clicked(clone!(@strong cancel_sender, @weak stack, @weak cancel_btn => move |_| {
         if let Some(sender) = cancel_sender.borrow_mut().take() {
             let _ = sender.send(()); // Send kill signal
+        } else {
+            // Act as Back button if installation is already finished/failed
+            stack.set_visible_child_name("page1");
+            cancel_btn.set_label("Cancel Install");
+            cancel_btn.add_css_class("destructive-action");
+            cancel_btn.remove_css_class("suggested-action");
         }
     }));
     
-    erase_btn3.connect_clicked(clone!(@weak stack, @weak text_view, @weak progress_bar, @strong target_disk, @strong target_variant, @strong cancel_sender, @strong pulse_timeout => move |_| {
+    erase_btn3.connect_clicked(clone!(@weak stack, @weak text_view, @weak progress_bar, @weak cancel_btn, @weak title4, @strong target_disk, @strong target_variant, @strong cancel_sender, @strong pulse_timeout => move |_| {
         stack.set_visible_child_name("page4");
+        cancel_btn.set_visible(true);
+        cancel_btn.set_label("Cancel Install");
+        cancel_btn.add_css_class("destructive-action");
+        cancel_btn.remove_css_class("suggested-action");
         
         let source_id = glib::timeout_add_local(std::time::Duration::from_millis(100), clone!(@weak progress_bar => @default-return glib::ControlFlow::Break, move || {
             progress_bar.pulse();
@@ -411,7 +421,7 @@ fn build_ui(app: &Application) {
         let (kill_tx, mut kill_rx) = oneshot::channel::<()>();
         *cancel_sender.borrow_mut() = Some(kill_tx);
         
-        receiver.attach(None, clone!(@weak text_view, @weak progress_bar, @weak stack, @strong pulse_timeout => @default-return glib::ControlFlow::Break, move |msg: String| {
+        receiver.attach(None, clone!(@weak text_view, @weak progress_bar, @weak stack, @weak cancel_btn, @weak title4, @strong cancel_sender, @strong pulse_timeout => @default-return glib::ControlFlow::Break, move |msg: String| {
             if msg.starts_with("EOF_") {
                 if let Some(id) = pulse_timeout.borrow_mut().take() {
                     id.remove();
@@ -427,13 +437,28 @@ fn build_ui(app: &Application) {
                 return glib::ControlFlow::Break;
             } else if msg == "EOF_ERROR" {
                 progress_bar.add_css_class("error");
+                
+                let _ = cancel_sender.borrow_mut().take();
+                cancel_btn.set_label("Back to Menu");
+                cancel_btn.remove_css_class("destructive-action");
+                cancel_btn.add_css_class("suggested-action");
+                
                 text_view.buffer().insert(&mut text_view.buffer().end_iter(), "\n[Installation Failed]\n");
                 return glib::ControlFlow::Break;
             }
             
+            let (pct, clean_msg) = match sanitize_log(&msg) {
+                Some((p, m)) => (p, m),
+                None => return glib::ControlFlow::Continue,
+            };
+            
+            if let Some(p) = pct {
+                title4.set_label(&format!("<b>{}% Installing...</b>", p));
+            }
+            
             let buffer = text_view.buffer();
             let mut iter = buffer.end_iter();
-            buffer.insert(&mut iter, &format!("{}\n", msg));
+            buffer.insert(&mut iter, &format!("{}\n", clean_msg));
             
             let mark = buffer.create_mark(None, &buffer.end_iter(), false);
             text_view.scroll_to_mark(&mark, 0.0, false, 0.0, 0.0);
@@ -445,8 +470,8 @@ fn build_ui(app: &Application) {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 let bootc_cmd = format!(
-                    "for p in {}*; do umount -l $p 2>/dev/null; done; umount -l /run/bootc/mounts/rootfs 2>/dev/null; bootc install to-disk --generic-image --wipe --filesystem btrfs --source-imgref docker://{} {}", 
-                    disk, variant, disk
+                    "killall -9 bootc skopeo 2>/dev/null || true; for p in {}*; do umount -l $p 2>/dev/null || true; done; umount -l /run/bootc/mounts/rootfs 2>/dev/null || true; btrfs device scan --forget 2>/dev/null || true; wipefs -af {}* 2>/dev/null || true; bootc install to-disk --generic-image --wipe --filesystem btrfs --bootloader none --source-imgref docker://{} {}", 
+                    disk, disk, variant, disk
                 );
                 
                 let mut child_install = tokio::process::Command::new("pkexec")
@@ -463,6 +488,17 @@ fn build_ui(app: &Application) {
                     tokio::select! {
                         _ = &mut kill_rx => {
                             let _ = child_install.kill().await;
+                            
+                            let _ = sender.send("Cleaning up and formatting drive to unallocated state...".to_string());
+                            let cleanup_cmd = format!(
+                                "killall -9 bootc skopeo 2>/dev/null || true; for p in {}*; do umount -l $p 2>/dev/null || true; done; btrfs device scan --forget 2>/dev/null || true; wipefs -af {}* 2>/dev/null || true; dd if=/dev/zero of={} bs=1M count=10 2>/dev/null || true; partprobe {} 2>/dev/null || true", 
+                                disk, disk, disk, disk
+                            );
+                            let _ = tokio::process::Command::new("pkexec")
+                                .args(["bash", "-c", &cleanup_cmd])
+                                .output()
+                                .await;
+                                
                             let _ = sender.send("EOF_CANCEL".to_string());
                             return;
                         }
@@ -482,6 +518,15 @@ fn build_ui(app: &Application) {
                 let status = child_install.wait().await;
                 match status {
                     Ok(s) if s.success() => {
+                        let _ = sender.send("95% Installing bootloader...".to_string());
+                        let bootloader_cmd = format!(
+                            "EFI_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' | head -n1 | awk '{{print $1}}'); if [ -n \"$EFI_PART\" ]; then mkdir -p /tmp/efi_mnt; umount -l $EFI_PART 2>/dev/null || true; mount $EFI_PART /tmp/efi_mnt && bootctl install --esp-path=/tmp/efi_mnt && umount /tmp/efi_mnt; fi",
+                            disk
+                        );
+                        let _ = tokio::process::Command::new("pkexec")
+                            .args(["bash", "-c", &bootloader_cmd])
+                            .output()
+                            .await;
                         let _ = sender.send("EOF_SUCCESS".to_string());
                     },
                     _ => {
@@ -535,4 +580,128 @@ fn get_host_drives() -> Vec<String> {
         }
     }
     drives
+}
+
+fn sanitize_log(raw: &str) -> Option<(Option<u32>, String)> {
+    if raw.trim().is_empty() {
+        return None;
+    }
+    
+    let trimmed = raw.trim();
+    let lower = trimmed.to_lowercase();
+    
+    let mut extracted_pct = None;
+    if let Some(idx) = lower.find('%') {
+        let mut start = idx;
+        let bytes = lower.as_bytes();
+        while start > 0 && bytes[start - 1].is_ascii_digit() {
+            start -= 1;
+        }
+        if start < idx {
+            if let Ok(val) = lower[start..idx].parse::<u32>() {
+                extracted_pct = Some(val);
+            }
+        }
+    }
+    
+    let hide_prefixes = [
+        "Wiping",
+        "Block setup:",
+        "Size:",
+        "Serial:",
+        "Model:",
+        "Partitions:",
+        "Disk /dev",
+        "Disk model:",
+        "Units:",
+        "Sector size",
+        "I/O size",
+        ">>> Script header",
+        "New situation:",
+        "Disklabel type:",
+        "Disk identifier:",
+        "Device", // matches "Device       Start"
+        "The partition table has been altered",
+        "Calling ioctl()",
+        "Syncing disks",
+        "> mkfs",
+        "layers already present",
+        "Bootloader:",
+        "Checking that no-one is using this disk",
+        "/dev/",
+        "program: \"",
+        "args: [",
+        "create_pidfd:",
+        "\"/dev/"
+    ];
+    
+    for prefix in hide_prefixes.iter() {
+        if trimmed.starts_with(prefix) {
+            return None;
+        }
+    }
+    
+    let hide_exact = [
+        "}",
+        "],",
+        "\"wipefs\",",
+        "\"-a\","
+    ];
+    for ext in hide_exact.iter() {
+        if trimmed == *ext {
+            return None;
+        }
+    }
+    
+    if lower.contains("bytes were erased") || lower.contains("calling ioctl") || lower.contains("failed to run command") || lower.contains("command {") {
+        return None;
+    }
+
+    // 2. Whitelist and translate friendly messages
+    if lower.contains("installing image:") {
+        return Some((Some(5), "Starting installation process...".to_string()));
+    }
+    if lower.contains("created a new gpt disklabel") {
+        return Some((Some(15), "Configuring partition tables...".to_string()));
+    }
+    if lower.contains("creating root filesystem") {
+        return Some((Some(30), "Formatting system partitions...".to_string()));
+    }
+    if lower.contains("creating esp filesystem") {
+        return Some((Some(40), "Formatting boot partition...".to_string()));
+    }
+    if lower.contains("initializing ostree layout") {
+        return Some((Some(50), "Initializing immutable system layout...".to_string()));
+    }
+    if lower.contains("deploying container image") {
+        return Some((Some(70), "Deploying operating system image (this may take a while)...".to_string()));
+    }
+    
+    // 3. Error handling
+    if lower.contains("error:") || lower.contains("failed") {
+        if lower.contains("network is unreachable") || lower.contains("unexpected end of file") {
+            return Some((None, "Installation Error: Network connection dropped. Please check your internet and try again.".to_string()));
+        }
+        if lower.contains("device is mounted") || lower.contains("is mounted") || lower.contains("resource busy") || lower.contains("device or resource busy") {
+            return Some((None, "Installation Error: The target drive is currently busy. Please reboot and try again.".to_string()));
+        }
+        if lower.contains("bootupd is required") {
+            return Some((None, "Installation Error: Missing bootloader components (bootupd).".to_string()));
+        }
+        
+        // Fallback error cleaner
+        if let Some(idx) = lower.find("error:") {
+            let clean = trimmed[idx..].to_string();
+            let mut chars = clean.chars();
+            let cap = match chars.next() {
+                None => String::new(),
+                Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
+            };
+            return Some((None, format!("Installation Failed: {}", cap)));
+        }
+        return Some((None, format!("Installation Failed: {}", trimmed)));
+    }
+
+    // Pass through anything that isn't matched
+    Some((extracted_pct, trimmed.to_string()))
 }
