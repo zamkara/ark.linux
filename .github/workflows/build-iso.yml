@@ -33,6 +33,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y podman
       - name: Build custom Apollo image with bootupd
         run: sudo podman build --squash-all --build-arg BASE_IMAGE=ghcr.io/apollo-linux/${{ matrix.variant }}:latest -t ghcr.io/${{ github.repository }}:${{ matrix.variant }} -f Containerfile .
+      - name: Transfer Squashed Image to Docker
+        run: |
+          sudo podman save ghcr.io/${{ github.repository }}:${{ matrix.variant }} -o payload.tar
+          sudo docker load -i payload.tar
+          rm payload.tar
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -40,7 +45,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push payload image to GHCR
-        run: sudo podman push --format=docker ghcr.io/${{ github.repository }}:${{ matrix.variant }}
+        run: sudo docker push ghcr.io/${{ github.repository }}:${{ matrix.variant }}
 
   build-iso:
     needs: build-payload
