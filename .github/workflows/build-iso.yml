@@ -34,24 +34,29 @@ jobs:
         run: |
           sudo podman build -t apollo-nvidia-bootupd:latest -f Containerfile .
       
-      - name: Build Installer ISO
+      - name: Create bootable image
         run: |
           mkdir -p output
-          sudo podman run \
-            --rm \
-            --privileged \
-            --pull=newer \
-            --security-opt label=type:unconfined_t \
-            -v /var/lib/containers/storage:/var/lib/containers/storage \
-            -v $(pwd)/output:/output \
-            quay.io/centos-bootc/bootc-image-builder:latest \
-            --type iso \
-            --rootfs btrfs \
-            --local \
-            localhost/apollo-nvidia-bootupd:latest
+          sudo dd if=/dev/zero of=output/apollo-nvidia.img bs=1G count=10
+          
+          sudo podman run --rm --privileged \
+            --pid=host \
+            --volume /dev:/dev \
+            --volume $(pwd)/output:/output \
+            apollo-nvidia-bootupd:latest \
+            bootc install to-disk --via-loopback \
+            --filesystem btrfs \
+            /output/apollo-nvidia.img
+      
+      - name: Compress Image
+        run: |
+          cd output
+          sudo apt-get install -y zstd
+          sudo zstd -T0 -10 apollo-nvidia.img -o apollo-nvidia.img.zst
+          ls -lh apollo-nvidia.img.zst
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apollo-nvidia-iso
-          path: output/bootiso/install.iso
+          name: apollo-nvidia-img
+          path: output/apollo-nvidia.img.zst
