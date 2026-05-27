@@ -35,14 +35,20 @@ jobs:
             useradd -m builduser
             passwd -d builduser
             echo "builduser ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/builduser
+            
             sudo -u builduser bash -c "
               cd ~
               git clone https://aur.archlinux.org/bootupd.git
-              cd bootupd && makepkg -s --noconfirm && cp *.pkg.tar.zst /work/aur-out/
+              cd bootupd && makepkg -s --noconfirm
+            "
+            cp /home/builduser/bootupd/*.pkg.tar.zst /work/aur-out/
+            
+            sudo -u builduser bash -c "
               cd ~
               git clone https://aur.archlinux.org/bootc.git
-              cd bootc && makepkg -s --noconfirm && cp *.pkg.tar.zst /work/aur-out/
+              cd bootc && makepkg -s --noconfirm
             "
+            cp /home/builduser/bootc/*.pkg.tar.zst /work/aur-out/
           '
       - name: Upload AUR packages
         uses: actions/upload-artifact@v4
