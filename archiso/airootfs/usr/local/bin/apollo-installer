@@ -46,9 +46,9 @@ if [ -z "$VARIANT" ]; then
 fi
 
 if [[ "$VARIANT" == *"apollo-nvidia"* ]]; then
-    IMAGE="ghcr.io/zamkara/apollo.builder/apollo-payload:apollo-nvidia"
+    IMAGE="ghcr.io/zamkara/apollo.builder:apollo-nvidia"
 else
-    IMAGE="ghcr.io/zamkara/apollo.builder/apollo-payload:apollo"
+    IMAGE="ghcr.io/zamkara/apollo.builder:apollo"
 fi
 
 # Run the installation
