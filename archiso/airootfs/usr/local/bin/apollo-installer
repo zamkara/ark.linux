@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# Apollo Linux Installer GUI using Zenity
-
-# Ensure we are root
+# Ensure script is run as root
 if [ "$EUID" -ne 0 ]; then
-  zenity --error --text="Installer must be run as root. Please run with sudo."
-  exit 1
+    zenity --error --text="Please run the installer as root (e.g., using sudo)."
+    exit 1
 fi
 
 zenity --info --title="Apollo Linux Installer" --text="Welcome to the Apollo Linux Installer.\nThis will install the bootc image to your selected disk."
@@ -13,11 +11,10 @@ zenity --info --title="Apollo Linux Installer" --text="Welcome to the Apollo Lin
 # Find the device the Live ISO booted from (e.g. /dev/sdb1 -> /dev/sdb)
 BOOT_DEV=$(findmnt -n -o SOURCE /run/archiso/bootmnt | sed -E 's/p?[0-9]+$//')
 
-# Get list of disks (ignoring loop, ram, usb, and the boot device)
+# Get list of disks
 DISKS=""
 while read -r line; do
     eval "$line"
-    # Skip the boot device
     if [[ "/dev/$NAME" == "$BOOT_DEV" || "/dev/$NAME" == "${BOOT_DEV%p}" ]]; then
         continue
     fi
@@ -35,65 +32,129 @@ if [ -z "$DISKS" ]; then
     exit 1
 fi
 
-CHOICE=$(echo -e "$DISKS" | xargs zenity --list --title="Select Target Disk" --text="Select the disk to install Apollo Linux to. WARNING: THIS WILL ERASE THE DISK!" --radiolist --column="Select" --column="Disk")
+STATE=1
+TARGET_DISK=""
+VARIANT=""
 
-if [ -z "$CHOICE" ]; then
-    zenity --info --text="Installation cancelled."
-    exit 0
-fi
+while true; do
+    case $STATE in
+        1)
+            # Disk Selection
+            CHOICE=$(echo -e "$DISKS" | xargs zenity --list --title="Select Target Disk" \
+                --text="Select the disk to install Apollo Linux to." \
+                --radiolist --column="Select" --column="Disk" \
+                --ok-label="Next" --cancel-label="Cancel" \
+                --width=500 --height=300)
+            
+            if [ $? -ne 0 ]; then
+                zenity --question --text="Are you sure you want to exit the installer?"
+                if [ $? -eq 0 ]; then exit 0; else continue; fi
+            fi
 
-TARGET_DISK=$(echo "$CHOICE" | awk '{print $1}')
+            if [ -z "$CHOICE" ]; then
+                zenity --warning --text="Please select a disk."
+                continue
+            fi
+            
+            TARGET_DISK=$(echo "$CHOICE" | awk '{print $1}')
+            STATE=2
+            ;;
+            
+        2)
+            # Variant Selection
+            VARIANT_CHOICE=$(zenity --list --title="Select Variant" \
+                --text="Which version of Apollo Linux do you want to install?" \
+                --radiolist --column="Select" --column="Variant" \
+                TRUE "apollo (Standard, AMD/Intel)" FALSE "apollo-nvidia (Nvidia Drivers)" \
+                --ok-label="Next" --cancel-label="Back" \
+                --width=500 --height=300)
+            
+            if [ $? -ne 0 ]; then
+                STATE=1
+                continue
+            fi
 
-zenity --question --title="Confirm Installation" --text="Are you SURE you want to install Apollo Linux to $TARGET_DISK?\n\nALL DATA ON $TARGET_DISK WILL BE PERMANENTLY ERASED!" --default-cancel
-if [ $? -ne 0 ]; then
-    zenity --info --text="Installation cancelled."
-    exit 0
-fi
+            if [ -z "$VARIANT_CHOICE" ]; then
+                zenity --warning --text="Please select a variant."
+                continue
+            fi
 
-VARIANT=$(zenity --list --title="Select Variant" --text="Which version of Apollo Linux do you want to install?" --radiolist --column="Select" --column="Variant" TRUE "apollo-nvidia (Nvidia Drivers)" FALSE "apollo (Standard, AMD/Intel)")
+            if [[ "$VARIANT_CHOICE" == *"apollo-nvidia"* ]]; then
+                IMAGE="ghcr.io/zamkara/apollo.builder:apollo-nvidia"
+            else
+                IMAGE="ghcr.io/zamkara/apollo.builder:apollo"
+            fi
+            STATE=3
+            ;;
+            
+        3)
+            # Confirmation
+            zenity --question --title="Confirm Erase" \
+                --text="WARNING: ALL DATA ON <b>$TARGET_DISK</b> WILL BE PERMANENTLY ERASED!\n\nAre you sure you want to proceed and install $IMAGE?" \
+                --ok-label="Erase & Install" --cancel-label="Back" \
+                --icon-name="dialog-warning" \
+                --width=400
+                
+            if [ $? -ne 0 ]; then
+                STATE=2
+                continue
+            fi
+            
+            STATE=4
+            ;;
+            
+        4)
+            # Installation
+            set -o pipefail
+            
+            # Use awk to show live logs in Zenity's label area
+            (
+                echo "10"; echo "# Pulling container image $IMAGE..."
+                podman pull $IMAGE 2>&1 | awk '{print "# "$0; fflush()}'
+                
+                if [ ${PIPESTATUS[0]} -ne 0 ]; then
+                    echo "100"; echo "# Failed to pull image!"
+                    exit 1
+                fi
+                
+                echo "50"; echo "# Installing OS to $TARGET_DISK..."
+                podman run --rm --privileged --pid=host \
+                  --security-opt label=type:unconfined_t \
+                  --volume /dev:/dev \
+                  --volume /var/lib/containers:/var/lib/containers \
+                  $IMAGE \
+                  bootc install to-disk $TARGET_DISK 2>&1 | awk '{print "# "$0; fflush()}'
 
-if [ -z "$VARIANT" ]; then
-    zenity --info --text="Installation cancelled."
-    exit 0
-fi
-
-if [[ "$VARIANT" == *"apollo-nvidia"* ]]; then
-    IMAGE="ghcr.io/zamkara/apollo.builder:apollo-nvidia"
-else
-    IMAGE="ghcr.io/zamkara/apollo.builder:apollo"
-fi
-
-# Enable pipefail to catch errors inside the subshell
-set -o pipefail
-
-# Run the installation
-(
-echo "10"; echo "# Pulling container image $IMAGE from the network..."
-podman pull $IMAGE > /tmp/install.log 2>&1
-if [ $? -ne 0 ]; then
-    echo "100"; echo "# Failed to pull image!"
-    exit 1
-fi
-
-echo "40"; echo "# Installing OS to $TARGET_DISK..."
-podman run --rm --privileged --pid=host \
-  --security-opt label=type:unconfined_t \
-  --volume /dev:/dev \
-  --volume /var/lib/containers:/var/lib/containers \
-  $IMAGE \
-  bootc install to-disk $TARGET_DISK >> /tmp/install.log 2>&1
-
-if [ $? -eq 0 ]; then
-    echo "100"; echo "# Installation Complete!"
-    exit 0
-else
-    echo "100"; echo "# Installation Failed!"
-    exit 1
-fi
-) | zenity --progress --title="Installing Apollo Linux" --text="Starting installation..." --percentage=0 --auto-close --auto-kill
-
-if [ $? -eq 0 ]; then
-    zenity --info --title="Success" --text="Installation completed successfully!\nYou can now reboot your system."
-else
-    zenity --error --title="Error" --text="Installation failed! Please check the logs.\n\nLast 15 lines of /tmp/install.log:\n$(tail -n 15 /tmp/install.log)"
-fi
+                if [ ${PIPESTATUS[0]} -eq 0 ]; then
+                    echo "100"; echo "# Installation Complete!"
+                    exit 0
+                else
+                    echo "100"; echo "# Installation Failed!"
+                    exit 1
+                fi
+            ) | zenity --progress --title="Installing Apollo Linux" --text="Starting..." --percentage=0 --auto-close --auto-kill --width=600
+            
+            if [ $? -eq 0 ]; then
+                STATE=5
+            else
+                zenity --error --title="Installation Failed" --text="An error occurred during installation. Please run via terminal for detailed logs."
+                exit 1
+            fi
+            ;;
+            
+        5)
+            # Success Menu
+            zenity --question --title="Installation Success" \
+                --text="Apollo Linux has been successfully installed!\n\nWhat would you like to do next?" \
+                --ok-label="Reboot" --cancel-label="Stay live"
+                
+            if [ $? -eq 0 ]; then
+                # Reboot
+                reboot
+            else
+                # Stay live
+                exit 0
+            fi
+            ;;
+    esac
+done
