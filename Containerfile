@@ -1,4 +1,5 @@
-FROM ghcr.io/apollo-linux/apollo-nvidia:latest as builder
+ARG BASE_IMAGE=ghcr.io/apollo-linux/apollo-nvidia:latest
+FROM ${BASE_IMAGE} as builder
 
 RUN pacman -Syu --noconfirm && \
     pacman -S --noconfirm base-devel git sudo && \
@@ -14,7 +15,7 @@ RUN sudo -u builder makepkg -s --noconfirm && \
     pacman -U --noconfirm *.pkg.tar.zst
 
 # Copy final image from base
-FROM ghcr.io/apollo-linux/apollo-nvidia:latest
+FROM ${BASE_IMAGE}
 
 # Install runtime dependencies
 RUN pacman -Syu --noconfirm && \

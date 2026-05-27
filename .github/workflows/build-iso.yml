@@ -1,4 +1,4 @@
-name: Build Apollo NVIDIA ISO
+name: Build Apollo Installer ISO
 
 on:
   push:
@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [apollo, apollo-nvidia]
     
     steps:
       - uses: actions/checkout@v4
@@ -28,35 +31,35 @@ jobs:
       - name: Set up dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y podman xorriso
+          sudo apt-get install -y podman
       
       - name: Build custom Apollo image with bootupd
         run: |
-          sudo podman build -t apollo-nvidia-bootupd:latest -f Containerfile .
+          sudo podman build --build-arg BASE_IMAGE=ghcr.io/apollo-linux/${{ matrix.variant }}:latest -t apollo-bootupd:latest -f Containerfile .
       
-      - name: Create bootable image
+      - name: Save container image for offline installation
         run: |
-          mkdir -p output
-          sudo dd if=/dev/zero of=output/apollo-nvidia.img bs=1G count=10
-          
-          sudo podman run --rm --privileged \
-            --pid=host \
-            --volume /dev:/dev \
-            --volume $(pwd)/output:/output \
-            apollo-nvidia-bootupd:latest \
-            bootc install to-disk --via-loopback \
-            --filesystem btrfs \
-            /output/apollo-nvidia.img
+          mkdir -p archiso/airootfs/root/
+          sudo podman save apollo-bootupd:latest -o archiso/airootfs/root/apollo-image.tar
       
-      - name: Compress Image
+      - name: Build Live Installer ISO
         run: |
-          cd output
-          sudo apt-get install -y zstd
-          sudo zstd -T0 -10 apollo-nvidia.img -o apollo-nvidia.img.zst
-          ls -lh apollo-nvidia.img.zst
+          sudo podman run --rm --privileged -v $(pwd):/work -w /work docker.io/archlinux:latest bash -c "pacman -Syu --noconfirm archiso && mkarchiso -v -w workdir/ -o out/ archiso/"
+          sudo chown -R $USER:$USER out/
+          mv out/*.iso out/${{ matrix.variant }}-installer.iso
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apollo-nvidia-img
-          path: output/apollo-nvidia.img.zst
+          name: ${{ matrix.variant }}-iso
+          path: out/${{ matrix.variant }}-installer.iso
+          
+      - name: Create Nightly Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: nightly
+          name: "Apollo Linux Nightly Build"
+          files: out/${{ matrix.variant }}-installer.iso
+          prerelease: true
+          make_latest: true

@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Apollo Linux Installer GUI using Zenity
+
+# Ensure we are root
+if [ "$EUID" -ne 0 ]; then
+  zenity --error --text="Installer must be run as root. Please run with sudo."
+  exit 1
+fi
+
+zenity --info --title="Apollo Linux Installer" --text="Welcome to the Apollo Linux Installer.\nThis will install the bootc image to your selected disk."
+
+# Get list of disks (ignoring loop devices and ramdisks)
+DISKS=$(lsblk -d -n -o NAME,SIZE,MODEL | grep -v "loop" | grep -v "ram" | awk '{print "/dev/"$1" ("$2" "$3" "$4")"}')
+
+if [ -z "$DISKS" ]; then
+    zenity --error --text="No disks found!"
+    exit 1
+fi
+
+# Format disks for zenity list
+# Zenity list requires parameters like: TRUE "disk1" FALSE "disk2" etc.
+# We'll just let them type the disk or use a list.
+DISK_OPTIONS=""
+while IFS= read -r line; do
+    DISK_OPTIONS="$DISK_OPTIONS FALSE \"$line\""
+done <<< "$DISKS"
+
+# Since eval with zenity list can be tricky, let's use a simpler radiolist
+CHOICE=$(echo "$DISKS" | awk '{print "FALSE\n"$0}' | xargs zenity --list --title="Select Target Disk" --text="Select the disk to install Apollo Linux to. WARNING: THIS WILL ERASE THE DISK!" --radiolist --column="Select" --column="Disk")
+
+if [ -z "$CHOICE" ]; then
+    zenity --info --text="Installation cancelled."
+    exit 0
+fi
+
+TARGET_DISK=$(echo "$CHOICE" | awk '{print $1}')
+
+zenity --question --title="Confirm Installation" --text="Are you SURE you want to install Apollo Linux to $TARGET_DISK?\n\nALL DATA ON $TARGET_DISK WILL BE PERMANENTLY ERASED!" --default-cancel
+if [ $? -ne 0 ]; then
+    zenity --info --text="Installation cancelled."
+    exit 0
+fi
+
+IMAGE="localhost/apollo-bootupd:latest"
+
+# Run the installation
+(
+echo "10"; echo "# Loading container image from installation media..."
+podman load -i /root/apollo-image.tar > /tmp/install.log 2>&1
+echo "40"; echo "# Installing OS to $TARGET_DISK..."
+podman run --rm --privileged --pid=host \
+  --security-opt label=type:unconfined_t \
+  --volume /dev:/dev \
+  --volume /var/lib/containers:/var/lib/containers \
+  $IMAGE \
+  bootc install to-disk $TARGET_DISK >> /tmp/install.log 2>&1
+
+if [ $? -eq 0 ]; then
+    echo "100"; echo "# Installation Complete!"
+else
+    echo "100"; echo "# Installation Failed! See /tmp/install.log"
+    exit 1
+fi
+) | zenity --progress --title="Installing Apollo Linux" --text="Starting installation..." --percentage=0 --auto-close --auto-kill
+
+if [ $? -eq 0 ]; then
+    zenity --info --title="Success" --text="Installation completed successfully!\nYou can now reboot your system."
+else
+    zenity --error --title="Error" --text="Installation failed. Please check the logs in /tmp/install.log"
+fi

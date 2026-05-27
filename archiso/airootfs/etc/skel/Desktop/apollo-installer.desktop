@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install Apollo Linux
+Comment=Install Apollo Linux to disk
+Exec=sudo /usr/local/bin/apollo-installer
+Icon=drive-harddisk
+Terminal=false
+Categories=System;
+StartupNotify=true

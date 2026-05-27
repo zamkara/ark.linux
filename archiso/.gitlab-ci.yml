@@ -1,0 +1,18 @@
+stages:          # List of stages for jobs, and their order of execution
+  - build
+
+build-job:       # This job runs in the build stage, which runs first.
+  stage: build
+  tags:
+    - iso
+  script:
+    - "TZ='Etc/UTC' date +%Y.%m.%d+%S > version"
+    - pacman -Scc
+    - mkarchiso -v -w workdir/ -o out/ . || mkarchiso -v -w workdir/ -o out/ .
+    - mv out/* blendOS.iso
+    - sha256sum blendOS.iso > checksum
+  artifacts:
+    paths:
+      - blendOS.iso
+      - version
+      - checksum
