@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Hiding bloatware apps from app grid...
+When = PostTransaction
+Exec = /usr/bin/bash -c 'rm -f /usr/share/applications/{bssh,bvnc,avahi-discover,qv4l2,qvidcap,stoken-gui,stoken-gui-small,org.gnome.Extensions}.desktop || true'

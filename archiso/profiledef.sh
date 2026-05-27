@@ -30,4 +30,6 @@ file_permissions=(
   ["/etc/locale.gen"]="0:0:644"
   ["/usr/local/bin/apollo-installer"]="0:0:755"
   ["/etc/skel/Desktop/apollo-installer.desktop"]="0:0:755"
+  ["/usr/share/applications/apollo-installer.desktop"]="0:0:755"
+  ["/etc/pacman.d/hooks/99-hide-apps.hook"]="0:0:644"
 )
