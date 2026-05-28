@@ -148,6 +148,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      DOWNLOAD_URL: ${{ steps.ranoz-upload.outputs.DOWNLOAD_URL }}
+      EXPIRATION_DATE: ${{ steps.ranoz-upload.outputs.EXPIRATION_DATE }}
     steps:
       - uses: actions/checkout@v6
       - name: Set up dependencies
@@ -181,7 +184,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ark-iso
-          path: out/ark-installer.iso
+          path: out/
       - name: Upload to Ranoz
         id: ranoz-upload
         run: |
@@ -208,9 +211,21 @@ jobs:
           EXP_DATE=$(date -d "+1 month" "+%d %B %Y")
           echo "DOWNLOAD_URL=$FILE_URL" >> $GITHUB_OUTPUT
           echo "EXPIRATION_DATE=$EXP_DATE" >> $GITHUB_OUTPUT
+
+  release:
+    needs: [build-payload, build-iso]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download ISO artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ark-iso
+          path: out/
       - name: Create Nightly Release
         uses: softprops/action-gh-release@v3
-        if: github.ref == 'refs/heads/main'
         with:
           tag_name: build-${{ github.sha }}
           name: "ark linux Build (${{ github.sha }})"
@@ -225,7 +240,7 @@ jobs:
             ### 💾 Downloads
             You can download the ISO from the GitHub Assets below, or use our high-speed alternative mirror:
             
-            [Download](${{ steps.ranoz-upload.outputs.DOWNLOAD_URL }}) (Expires on ${{ steps.ranoz-upload.outputs.EXPIRATION_DATE }})
+            [Download](${{ needs.build-iso.outputs.DOWNLOAD_URL }}) (Expires on ${{ needs.build-iso.outputs.EXPIRATION_DATE }})
           files: out/ark-installer.iso
           prerelease: false
           make_latest: true
