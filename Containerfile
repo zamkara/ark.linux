@@ -1,18 +1,13 @@
 # Signature: emFta2FyYQ==
 ARG VARIANT=ark
 
-# Stage 1: Build Alga Updater
-FROM docker.io/archlinux:latest AS alga-builder
-RUN pacman -Syu --noconfirm rust pkgconf gtk4 libadwaita base-devel git
-COPY .github/workflows/alga /src
-WORKDIR /src
-RUN cargo build --release
-
-# Stage 2: Final Image (ark linux)
+# Final Image (ark linux)
 FROM docker.io/archlinux:latest
 ARG VARIANT
 
 COPY aur-packages/*.pkg.tar.zst /tmp/
+COPY alga-binary/alga /usr/bin/alga
+RUN chmod +x /usr/bin/alga
 
 # Install core system, GNOME, and bootc dependencies
 RUN pacman -Syu --noconfirm && \
@@ -28,8 +23,6 @@ RUN pacman -Syu --noconfirm && \
 RUN sed -i 's/\bblock filesystems\b/block ostree filesystems/g' /etc/mkinitcpio.conf && \
     mkinitcpio -P
 
-# Copy Alga binary into the system
-COPY --from=alga-builder /src/target/release/alga /usr/bin/alga
 
 # Setup ark linux Updater desktop file
 RUN echo "[Desktop Entry]" > /usr/share/applications/alga-updater.desktop && \

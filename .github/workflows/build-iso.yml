@@ -11,6 +11,31 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  build-alga:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            .github/workflows/alga/target/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+          key: ${{ runner.os }}-cargo-alga-${{ hashFiles('.github/workflows/alga/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-alga-
+      - name: Install Rust and GTK4 dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libadwaita-1-dev
+      - name: Build Alga Binary
+        working-directory: .github/workflows/alga
+        run: cargo build --release
+      - name: Upload Alga Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: alga-binary
+          path: .github/workflows/alga/target/release/alga
+
   build-aur-packages:
     runs-on: ubuntu-latest
     steps:
@@ -26,11 +51,22 @@ jobs:
         with:
           path: aur-out/
           key: ${{ runner.os }}-aur-${{ steps.aur-versions.outputs.key }}
+      - name: Cache Pacman AUR Build
+        if: steps.cache-aur.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: pacman-aur-cache/
+          key: ${{ runner.os }}-pacman-aur-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-pacman-aur-
+      - name: Prepare Cache Dir
+        if: steps.cache-aur.outputs.cache-hit != 'true'
+        run: mkdir -p pacman-aur-cache
       - name: Build AUR packages in Arch container
         if: steps.cache-aur.outputs.cache-hit != 'true'
         run: |
           mkdir -p aur-out
-          sudo podman run --rm --privileged -v $(pwd):/work -w /work docker.io/archlinux:latest bash -c '
+          sudo podman run --rm --privileged -v $(pwd):/work -v $(pwd)/pacman-aur-cache:/var/cache/pacman/pkg -w /work docker.io/archlinux:latest bash -c '
             pacman -Syu --noconfirm base-devel git sudo
             useradd -m builduser
             passwd -d builduser
@@ -57,7 +93,7 @@ jobs:
           path: aur-out/*.pkg.tar.zst
 
   build-payload:
-    needs: build-aur-packages
+    needs: [build-aur-packages, build-alga]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -85,6 +121,11 @@ jobs:
         with:
           name: aur-packages
           path: aur-packages/
+      - name: Download Alga Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: alga-binary
+          path: alga-binary/
       - name: Cache Pacman Payload
         uses: actions/cache@v4
         with:
@@ -124,13 +165,11 @@ jobs:
         with:
           name: aur-packages
           path: aur-packages/
-      - name: Cache Cargo
-        uses: actions/cache@v4
+      - name: Download Alga Binary
+        uses: actions/download-artifact@v4
         with:
-          path: cargo-cache/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('.github/workflows/alga/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          name: alga-binary
+          path: alga-binary/
       - name: Cache Pacman ISO
         uses: actions/cache@v4
         with:
@@ -139,11 +178,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pacman-iso-
       - name: Prepare Cache Dirs
-        run: mkdir -p cargo-cache/registry cargo-cache/git cargo-cache/target pacman-cache
+        run: mkdir -p pacman-cache
       - name: Build Live Installer ISO
         run: |
           chmod +x .github/workflows/build_iso.sh
-          sudo podman run --rm --privileged -v $(pwd):/work -v $(pwd)/cargo-cache/registry:/root/.cargo/registry -v $(pwd)/cargo-cache/git:/root/.cargo/git -v $(pwd)/cargo-cache/target:/work/.github/workflows/alga/target -v $(pwd)/pacman-cache:/var/cache/pacman/pkg -w /work docker.io/archlinux:latest bash /work/.github/workflows/build_iso.sh
+          sudo podman run --rm --privileged -v $(pwd):/work -v $(pwd)/pacman-cache:/var/cache/pacman/pkg -w /work docker.io/archlinux:latest bash /work/.github/workflows/build_iso.sh
           sudo chown -R $USER:$USER out/
           mv out/*.iso out/ark-installer.iso
       - name: Upload artifact
@@ -151,18 +190,11 @@ jobs:
         with:
           name: ark-iso
           path: out/ark-installer.iso
-      - name: Upload ISO to Ranoz
+      - name: Upload to Ranoz
         id: ranoz-upload
         run: |
           FILE_PATH="out/ark-installer.iso"
           FILENAME="ark-installer-${{ github.sha }}.iso"
-          SIZE=$(stat -c%s "$FILE_PATH")
-          
-          RESPONSE=$(curl -s -X POST https://ranoz.gg/api/v1/files/upload_url -H "Content-Type: application/json" -d "{
-            \"filename\": \"$FILENAME\",
-            \"size\": $SIZE
-          }")
-          
           UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.data.upload_url')
           FILE_ID=$(echo "$RESPONSE" | jq -r '.data.id')
           FILE_URL=$(echo "$RESPONSE" | jq -r '.data.url // empty')
