@@ -7,16 +7,14 @@ on:
     - cron: '0 2 * * 0'
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-alga:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Cache Cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             .github/workflows/alga/target/
@@ -31,7 +29,7 @@ jobs:
         working-directory: .github/workflows/alga
         run: cargo build --release
       - name: Upload Alga Binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: alga-binary
           path: .github/workflows/alga/target/release/alga
@@ -39,7 +37,7 @@ jobs:
   build-aur-packages:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Get AUR Versions
         id: aur-versions
         run: |
@@ -47,13 +45,13 @@ jobs:
           echo "key=$VERSIONS" >> $GITHUB_OUTPUT
       - name: Cache AUR packages
         id: cache-aur
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: aur-out/
           key: ${{ runner.os }}-aur-${{ steps.aur-versions.outputs.key }}
       - name: Cache Pacman AUR Build
         if: steps.cache-aur.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pacman-aur-cache/
           key: ${{ runner.os }}-pacman-aur-${{ github.sha }}
@@ -95,7 +93,7 @@ jobs:
           '
           sudo chown -R $USER:$USER aur-out/ pacman-aur-cache/
       - name: Upload AUR packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: aur-packages
           path: aur-out/*.pkg.tar.zst
@@ -111,7 +109,7 @@ jobs:
       matrix:
         variant: [ark, ark-nvidia, ark-zen, ark-zen-nvidia, ark-lts, ark-lts-nvidia, ark-hardened, ark-hardened-nvidia]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -125,17 +123,17 @@ jobs:
       - name: Set up dependencies
         run: sudo apt-get update && sudo apt-get install -y podman
       - name: Download AUR packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: aur-packages
           path: aur-packages/
       - name: Download Alga Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: alga-binary
           path: alga-binary/
       - name: Cache Pacman Payload
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pacman-cache/
           key: ${{ runner.os }}-pacman-payload-${{ github.sha }}
@@ -158,21 +156,21 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up dependencies
         run: sudo apt-get update && sudo apt-get install -y podman
       - name: Download AUR packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: aur-packages
           path: aur-packages/
       - name: Download Alga Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: alga-binary
           path: alga-binary/
       - name: Cache Pacman ISO
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pacman-cache/
           key: ${{ runner.os }}-pacman-iso-${{ github.sha }}
@@ -187,7 +185,7 @@ jobs:
           sudo chown -R $USER:$USER out/ pacman-cache/
           mv out/*.iso out/ark-installer.iso
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ark-iso
           path: out/ark-installer.iso
@@ -218,7 +216,7 @@ jobs:
           echo "DOWNLOAD_URL=$FILE_URL" >> $GITHUB_OUTPUT
           echo "EXPIRATION_DATE=$EXP_DATE" >> $GITHUB_OUTPUT
       - name: Create Nightly Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: build-${{ github.sha }}
