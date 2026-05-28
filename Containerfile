@@ -20,7 +20,7 @@ RUN pacman -Syu --noconfirm && \
     base linux linux-firmware networkmanager mkinitcpio \
     gnome gdm \
     util-linux openssl grub efibootmgr dosfstools ostree skopeo btrfs-progs podman composefs distrobox && \
-    if [ "$VARIANT" = "ark-nvidia" ]; then pacman -S --noconfirm nvidia nvidia-utils nvidia-settings; fi && \
+    if [ "$VARIANT" = "ark-nvidia" ]; then pacman -S --noconfirm nvidia-open nvidia-utils nvidia-settings; fi && \
     pacman -U --noconfirm /tmp/*.pkg.tar.zst && \
     rm -f /tmp/*.pkg.tar.zst
 
