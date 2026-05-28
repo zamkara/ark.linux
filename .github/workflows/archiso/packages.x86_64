@@ -113,6 +113,7 @@ gnome-session
 gnome-settings-daemon
 gnome-shell
 gnome-shell-extensions
+gnome-backgrounds
 xorg-server
 grub
 bootc
