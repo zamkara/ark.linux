@@ -272,6 +272,14 @@ fn build_ui(app: &Application) {
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
 
+    let check1 = CheckButton::builder()
+        .label("Ark Linux (Standard)")
+        .build();
+    let check2 = CheckButton::builder()
+        .label("Ark Linux (NVIDIA)")
+        .group(&check1)
+        .build();
+
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Arch Linux Installer")
@@ -402,20 +410,17 @@ fn build_ui(app: &Application) {
     
     let title2 = Label::builder().label("<b>Select Variant</b>").use_markup(true).halign(gtk::Align::Center).build();
     title2.add_css_class("title-2");
-    let subtitle2 = Label::builder().label("Choose the Apollo OS variant that best suits your hardware. The standard edition is ideal for Intel and AMD graphics, while the Nvidia edition comes pre-configured with proprietary drivers for optimal performance.").wrap(true).justify(gtk::Justification::Fill).build();
+    let subtitle2 = Label::builder().label("Choose the Ark Linux variant that best suits your hardware. The standard edition is ideal for Intel and AMD graphics, while the Nvidia edition comes pre-configured with proprietary drivers for optimal performance.").wrap(true).justify(gtk::Justification::Fill).build();
     
     let pref_group2 = PreferencesGroup::new();
-    let row_var1 = ActionRow::builder().title("Apollo OS").subtitle("Standard edition for AMD/Intel graphics").build();
-    let var1 = CheckButton::new();
-    row_var1.add_prefix(&var1);
-    row_var1.set_activatable_widget(Some(&var1));
+    let row_var1 = ActionRow::builder().title("Ark Linux").subtitle("Standard edition for AMD/Intel graphics").build();
+    row_var1.add_prefix(&check1);
+    row_var1.set_activatable_widget(Some(&check1));
+    check1.set_active(true);
     
-    let row_var2 = ActionRow::builder().title("Apollo OS (Nvidia)").subtitle("Includes proprietary Nvidia drivers").build();
-    let var2 = CheckButton::new();
-    var2.set_group(Some(&var1));
-    var1.set_active(true);
-    row_var2.add_prefix(&var2);
-    row_var2.set_activatable_widget(Some(&var2));
+    let row_var2 = ActionRow::builder().title("Ark Linux (Nvidia)").subtitle("Includes proprietary Nvidia drivers").build();
+    row_var2.add_prefix(&check2);
+    row_var2.set_activatable_widget(Some(&check2));
     
     pref_group2.add(&row_var1);
     pref_group2.add(&row_var2);
@@ -615,11 +620,11 @@ fn build_ui(app: &Application) {
         }
     }));
     
-    next_btn2.connect_clicked(clone!(@weak stack, @strong target_variant, @weak var1 => move |_| {
-        if var1.is_active() {
-            *target_variant.borrow_mut() = "ghcr.io/zamkara/apollo.builder:apollo".to_string();
+    next_btn2.connect_clicked(clone!(@weak stack, @strong target_variant, @weak check2 => move |_| {
+        if check2.is_active() {
+            *target_variant.borrow_mut() = "ghcr.io/zamkara/apollo.builder:ark-nvidia".to_string();
         } else {
-            *target_variant.borrow_mut() = "ghcr.io/zamkara/apollo.builder:apollo-nvidia".to_string();
+            *target_variant.borrow_mut() = "ghcr.io/zamkara/apollo.builder:ark".to_string();
         }
         stack.set_visible_child_name("page3");
     }));

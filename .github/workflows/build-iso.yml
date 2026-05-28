@@ -65,7 +65,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [apollo, apollo-nvidia]
+        variant: [ark, ark-nvidia]
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space
@@ -94,8 +94,8 @@ jobs:
             ${{ runner.os }}-pacman-payload-
       - name: Prepare Cache Dir
         run: mkdir -p pacman-cache
-      - name: Build custom Apollo image with bootupd
-        run: sudo podman build -v $(pwd)/pacman-cache:/var/cache/pacman/pkg --squash-all --build-arg BASE_IMAGE=ghcr.io/apollo-linux/${{ matrix.variant }}:latest -t ghcr.io/${{ github.repository }}:${{ matrix.variant }} -f Containerfile .
+      - name: Build custom Ark image with bootupd
+        run: sudo podman build -v $(pwd)/pacman-cache:/var/cache/pacman/pkg --squash-all --build-arg VARIANT=${{ matrix.variant }} -t ghcr.io/${{ github.repository }}:${{ matrix.variant }} -f Containerfile .
       - name: Transfer Squashed Image to Docker
         run: |
           sudo podman save ghcr.io/${{ github.repository }}:${{ matrix.variant }} -o payload.tar

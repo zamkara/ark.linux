@@ -1,4 +1,5 @@
 # Signature: emFta2FyYQ==
+ARG VARIANT=ark
 
 # Stage 1: Build Alga Updater
 FROM docker.io/archlinux:latest AS alga-builder
@@ -9,6 +10,7 @@ RUN cargo build --release
 
 # Stage 2: Final Image (Ark Linux)
 FROM docker.io/archlinux:latest
+ARG VARIANT
 
 COPY aur-packages/*.pkg.tar.zst /tmp/
 
@@ -18,6 +20,7 @@ RUN pacman -Syu --noconfirm && \
     base linux linux-firmware networkmanager mkinitcpio \
     gnome gdm \
     util-linux openssl grub efibootmgr dosfstools ostree skopeo btrfs-progs podman composefs distrobox && \
+    if [ "$VARIANT" = "ark-nvidia" ]; then pacman -S --noconfirm nvidia nvidia-utils nvidia-settings; fi && \
     pacman -U --noconfirm /tmp/*.pkg.tar.zst && \
     rm -f /tmp/*.pkg.tar.zst
 
