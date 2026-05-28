@@ -77,8 +77,8 @@ jobs:
           mkdir -p aur-out
           sudo podman run --rm --privileged -v $(pwd):/work -v $(pwd)/pacman-aur-cache:/var/cache/pacman/pkg -v $(pwd)/cargo-aur-cache-${{ matrix.package }}:/home/builduser/.cargo -w /work docker.io/archlinux:latest bash -c "
             pacman -Syu --noconfirm base-devel git sudo rust
-            useradd -m builduser
-            chown -R builduser:builduser /home/builduser/.cargo
+            useradd -m builduser || true
+            chown -R builduser:builduser /home/builduser
             passwd -d builduser
             echo 'builduser ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builduser
             
