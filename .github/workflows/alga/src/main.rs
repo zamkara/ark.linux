@@ -520,8 +520,8 @@ fn build_ui(app: &Application) {
                     Ok(s) if s.success() => {
                         let _ = sender.send("95% Installing bootloader...".to_string());
                         let bootloader_cmd = format!(
-                            "EFI_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' | head -n1 | awk '{{print $1}}'); if [ -n \"$EFI_PART\" ]; then mkdir -p /tmp/efi_mnt; umount -l $EFI_PART 2>/dev/null || true; mount $EFI_PART /tmp/efi_mnt && bootctl install --esp-path=/tmp/efi_mnt && umount /tmp/efi_mnt; fi",
-                            disk
+                            "EFI_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' | head -n1 | awk '{{print $1}}'); ROOT_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i '4f68bce3-e8cd-4db1-96e7-fbcaf984b709' | head -n1 | awk '{{print $1}}'); if [ -n \"$EFI_PART\" ] && [ -n \"$ROOT_PART\" ]; then mkdir -p /tmp/efi_mnt /tmp/root_mnt; umount -l $EFI_PART 2>/dev/null || true; umount -l $ROOT_PART 2>/dev/null || true; mount $ROOT_PART /tmp/root_mnt; mount $EFI_PART /tmp/efi_mnt && bootctl install --esp-path=/tmp/efi_mnt && mkdir -p /tmp/efi_mnt/ostree && cp -r /tmp/root_mnt/boot/ostree/* /tmp/efi_mnt/ostree/ && mkdir -p /tmp/efi_mnt/loader/entries && cp /tmp/root_mnt/boot/loader/entries/*.conf /tmp/efi_mnt/loader/entries/ && sed -i 's|/boot/ostree|/ostree|g' /tmp/efi_mnt/loader/entries/*.conf && sed -i 's/bootloader=none/bootloader=systemd-boot/' /tmp/root_mnt/ostree/repo/config && umount /tmp/efi_mnt && umount /tmp/root_mnt; fi",
+                            disk, disk
                         );
                         let _ = tokio::process::Command::new("pkexec")
                             .args(["bash", "-c", &bootloader_cmd])
