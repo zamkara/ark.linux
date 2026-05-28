@@ -10,7 +10,6 @@ iso_version="$(date +%Y.%m.%d)"
 install_dir="ark"
 buildmodes=('iso')
 bootmodes=(
-  'bios.syslinux'
   'uefi.systemd-boot'
 )
 arch="x86_64"
