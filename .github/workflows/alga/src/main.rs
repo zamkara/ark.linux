@@ -622,9 +622,9 @@ fn build_ui(app: &Application) {
     
     next_btn2.connect_clicked(clone!(@weak stack, @strong target_variant, @weak check2 => move |_| {
         if check2.is_active() {
-            *target_variant.borrow_mut() = "ghcr.io/zamkara/apollo.builder:ark-nvidia".to_string();
+            *target_variant.borrow_mut() = "ghcr.io/zamkara/ark.linux:ark-nvidia".to_string();
         } else {
-            *target_variant.borrow_mut() = "ghcr.io/zamkara/apollo.builder:ark".to_string();
+            *target_variant.borrow_mut() = "ghcr.io/zamkara/ark.linux:ark".to_string();
         }
         stack.set_visible_child_name("page3");
     }));
