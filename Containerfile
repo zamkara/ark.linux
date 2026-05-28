@@ -30,7 +30,8 @@ RUN KERNEL="linux"; \
         fi \
     fi && \
     pacman -U --noconfirm /tmp/*.pkg.tar.zst && \
-    rm -f /tmp/*.pkg.tar.zst
+    rm -f /tmp/*.pkg.tar.zst && \
+    pacman -Scc --noconfirm
 
 # Enable plymouth and ostree in mkinitcpio, and configure Plymouth BGRT theme for silent boot
 RUN sed -i 's/\bblock filesystems\b/block plymouth ostree filesystems/g' /etc/mkinitcpio.conf && \
