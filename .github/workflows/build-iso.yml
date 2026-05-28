@@ -60,16 +60,25 @@ jobs:
           key: ${{ runner.os }}-pacman-aur-v1
           restore-keys: |
             ${{ runner.os }}-pacman-aur-
+      - name: Cache Cargo AUR
+        uses: actions/cache@v5
+        with:
+          path: cargo-aur-cache-${{ matrix.package }}/
+          key: ${{ runner.os }}-cargo-aur-${{ matrix.package }}-${{ steps.aur-version.outputs.key }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-aur-${{ matrix.package }}-
       - name: Prepare Cache Dir
         if: steps.cache-aur.outputs.cache-hit != 'true'
-        run: mkdir -p pacman-aur-cache
+        run: |
+          mkdir -p pacman-aur-cache cargo-aur-cache-${{ matrix.package }}
       - name: Build AUR package in Arch container
         if: steps.cache-aur.outputs.cache-hit != 'true'
         run: |
           mkdir -p aur-out
-          sudo podman run --rm --privileged -v $(pwd):/work -v $(pwd)/pacman-aur-cache:/var/cache/pacman/pkg -w /work docker.io/archlinux:latest bash -c "
-            pacman -Syu --noconfirm base-devel git sudo
+          sudo podman run --rm --privileged -v $(pwd):/work -v $(pwd)/pacman-aur-cache:/var/cache/pacman/pkg -v $(pwd)/cargo-aur-cache-${{ matrix.package }}:/home/builduser/.cargo -w /work docker.io/archlinux:latest bash -c "
+            pacman -Syu --noconfirm base-devel git sudo rust
             useradd -m builduser
+            chown -R builduser:builduser /home/builduser/.cargo
             passwd -d builduser
             echo 'builduser ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builduser
             
@@ -80,7 +89,7 @@ jobs:
             '
             cp /home/builduser/${{ matrix.package }}/*.pkg.tar.zst /work/aur-out/
           "
-          sudo chown -R $USER:$USER aur-out/ pacman-aur-cache/
+          sudo chown -R $USER:$USER aur-out/ pacman-aur-cache/ cargo-aur-cache-${{ matrix.package }}/
       - name: Upload AUR package
         uses: actions/upload-artifact@v7
         with:
