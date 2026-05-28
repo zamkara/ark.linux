@@ -40,17 +40,217 @@ fn main() {
         return;
     }
 
-    let app = Application::builder()
-        .application_id("com.zamkara.alga")
+    let is_installed_os = std::path::Path::new("/run/ostree-booted").exists();
+
+    if is_installed_os {
+        let app = Application::builder()
+            .application_id("com.zamkara.alga.updater")
+            .build();
+
+        app.connect_startup(|_| {
+            libadwaita::init();
+        });
+
+        app.connect_activate(build_updater_ui);
+        app.run();
+    } else {
+        let app = Application::builder()
+            .application_id("com.zamkara.alga")
+            .build();
+
+        app.connect_startup(|_| {
+            libadwaita::init();
+        });
+
+        app.connect_activate(build_ui);
+        app.run();
+    }
+}
+
+fn build_updater_ui(app: &Application) {
+    let provider = gtk::CssProvider::new();
+    provider.load_from_data("
+        * { box-shadow: none !important; }
+        .log-container, .log-container textview, .log-container text { 
+            border-radius: 12px; 
+        }
+        .log-wrapper {
+            border-radius: 12px;
+            overflow: hidden;
+            border: none;
+        }
+    ");
+    gtk::style_context_add_provider_for_display(
+        &gtk::gdk::Display::default().unwrap(),
+        &provider,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
+
+    let window = ApplicationWindow::builder()
+        .application(app)
+        .title("Software Updater")
+        .default_width(400)
+        .default_height(400)
         .build();
 
-    app.connect_startup(|_| {
-        libadwaita::init();
-    });
+    let main_box = Box::new(Orientation::Vertical, 0);
+    let header_bar = HeaderBar::new();
+    main_box.append(&header_bar);
 
-    app.connect_activate(build_ui);
+    let content_box = Box::new(Orientation::Vertical, 18);
+    content_box.set_margin_top(32);
+    content_box.set_margin_bottom(32);
+    content_box.set_margin_start(32);
+    content_box.set_margin_end(32);
+    content_box.set_halign(gtk::Align::Center);
+    content_box.set_valign(gtk::Align::Center);
 
-    app.run();
+    let icon = Image::builder()
+        .icon_name("software-update-available-symbolic")
+        .pixel_size(96)
+        .build();
+    content_box.append(&icon);
+
+    let label = Label::builder()
+        .label("Apollo OS System Update")
+        .css_classes(vec!["title-1".to_string()])
+        .build();
+    content_box.append(&label);
+
+    let desc = Label::builder()
+        .label("Click update to download and install the latest system updates.")
+        .justify(gtk::Justification::Center)
+        .wrap(true)
+        .build();
+    content_box.append(&desc);
+
+    let update_btn = Button::builder()
+        .label("Update Now")
+        .css_classes(vec!["suggested-action".to_string(), "pill".to_string()])
+        .build();
+    content_box.append(&update_btn);
+
+    let progress_bar = ProgressBar::builder()
+        .visible(false)
+        .margin_top(12)
+        .build();
+    content_box.append(&progress_bar);
+
+    let text_view = TextView::builder()
+        .editable(false)
+        .cursor_visible(false)
+        .wrap_mode(gtk::WrapMode::WordChar)
+        .visible(false)
+        .build();
+    let scrolled = ScrolledWindow::builder()
+        .child(&text_view)
+        .min_content_height(120)
+        .visible(false)
+        .build();
+    content_box.append(&scrolled);
+
+    let pulse_timeout: Rc<RefCell<Option<glib::SourceId>>> = Rc::new(RefCell::new(None));
+
+    update_btn.connect_clicked(clone!(@weak update_btn, @weak progress_bar, @weak text_view, @weak scrolled, @strong pulse_timeout => move |_| {
+        update_btn.set_sensitive(false);
+        update_btn.set_label("Updating...");
+        progress_bar.set_visible(true);
+        scrolled.set_visible(true);
+        text_view.set_visible(true);
+        
+        let (sender, receiver) = glib::MainContext::channel(glib::Priority::DEFAULT);
+        
+        *pulse_timeout.borrow_mut() = Some(glib::timeout_add_local(
+            std::time::Duration::from_millis(100),
+            clone!(@weak progress_bar => @default-return glib::ControlFlow::Break, move || {
+                progress_bar.pulse();
+                glib::ControlFlow::Continue
+            })
+        ));
+
+        let buffer = text_view.buffer();
+        buffer.set_text("Starting update process...\n");
+
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                let mut child = tokio::process::Command::new("pkexec")
+                    .args(["bootc", "upgrade"])
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()
+                    .expect("Failed to execute bootc upgrade");
+
+                let stdout = child.stdout.take().unwrap();
+                let stderr = child.stderr.take().unwrap();
+                
+                let mut reader_out = BufReader::new(stdout).lines();
+                let mut reader_err = BufReader::new(stderr).lines();
+
+                let sender_clone1 = sender.clone();
+                let t1 = tokio::spawn(async move {
+                    while let Ok(Some(line)) = reader_out.next_line().await {
+                        let _ = sender_clone1.send(line);
+                    }
+                });
+
+                let sender_clone2 = sender.clone();
+                let t2 = tokio::spawn(async move {
+                    while let Ok(Some(line)) = reader_err.next_line().await {
+                        let _ = sender_clone2.send(line);
+                    }
+                });
+
+                let _ = tokio::join!(t1, t2);
+                let status = child.wait().await;
+                match status {
+                    Ok(s) if s.success() => {
+                        let _ = sender.send("EOF_SUCCESS".to_string());
+                    },
+                    _ => {
+                        let _ = sender.send("EOF_ERROR".to_string());
+                    }
+                }
+            });
+        });
+
+        receiver.attach(
+            None,
+            clone!(@weak text_view, @weak progress_bar, @weak update_btn, @strong pulse_timeout => @default-return glib::ControlFlow::Break, move |text| {
+                if text == "EOF_SUCCESS" {
+                    if let Some(source_id) = pulse_timeout.borrow_mut().take() {
+                        source_id.remove();
+                    }
+                    progress_bar.set_fraction(1.0);
+                    update_btn.set_label("Update Complete! Reboot required.");
+                    update_btn.add_css_class("success");
+                    return glib::ControlFlow::Break;
+                } else if text == "EOF_ERROR" {
+                    if let Some(source_id) = pulse_timeout.borrow_mut().take() {
+                        source_id.remove();
+                    }
+                    progress_bar.set_fraction(1.0);
+                    update_btn.set_label("Update Failed.");
+                    update_btn.add_css_class("destructive");
+                    update_btn.set_sensitive(true);
+                    return glib::ControlFlow::Break;
+                }
+                
+                let buffer = text_view.buffer();
+                let mut end_iter = buffer.end_iter();
+                buffer.insert(&mut end_iter, &format!("{}\n", text));
+                
+                let mark = buffer.create_mark(None, &buffer.end_iter(), false);
+                text_view.scroll_to_mark(&mark, 0.0, false, 0.0, 1.0);
+                
+                glib::ControlFlow::Continue
+            }),
+        );
+    }));
+
+    main_box.append(&content_box);
+    window.set_content(Some(&main_box));
+    window.present();
 }
 
 fn build_ui(app: &Application) {
