@@ -34,7 +34,7 @@ RUN KERNEL="linux"; \
     pacman -Scc --noconfirm
 
 # Enable plymouth and ostree in mkinitcpio, and configure Plymouth BGRT theme for silent boot
-RUN sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block plymouth ostree filesystems)/g' /etc/mkinitcpio.conf && \
+RUN sed -i 's/^HOOKS=.*/HOOKS=(base systemd microcode modconf kms keyboard sd-vconsole block plymouth ostree filesystems fsck)/g' /etc/mkinitcpio.conf && \
     mkdir -p /etc/plymouth && echo -e "[Daemon]\nTheme=bgrt" > /etc/plymouth/plymouthd.conf && \
     mkinitcpio -P && \
     KVER=$(ls -1 /usr/lib/modules | grep -v 'extramodules' | head -n 1) && \
