@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use libadwaita::{Application, ApplicationWindow, HeaderBar, PreferencesGroup, ActionRow};
 use gtk::{
     Box, Button, Label, Orientation, ProgressBar, ScrolledWindow, Stack, StackTransitionType,
-    TextView, CheckButton, Image,
+    TextView, CheckButton, Image, Switch,
 };
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -244,6 +244,14 @@ fn build_ui(app: &Application) {
     ack_row.add_prefix(&ack_check);
     ack_row.set_activatable_widget(Some(&ack_check));
     pref_group3.add(&ack_row);
+
+    let grub_row = ActionRow::builder()
+        .title("Install GRUB Bootloader")
+        .subtitle("Optional fallback bootloader. If disabled, only systemd-boot will be installed.")
+        .build();
+    let grub_switch = Switch::builder().active(false).valign(gtk::Align::Center).build();
+    grub_row.add_suffix(&grub_switch);
+    pref_group3.add(&grub_row);
     
     content3.append(&title3);
     content3.append(&info_label);
@@ -401,7 +409,7 @@ fn build_ui(app: &Application) {
         }
     }));
     
-    erase_btn3.connect_clicked(clone!(@weak stack, @weak text_view, @weak progress_bar, @weak cancel_btn, @weak title4, @strong target_disk, @strong target_variant, @strong cancel_sender, @strong pulse_timeout => move |_| {
+    erase_btn3.connect_clicked(clone!(@weak stack, @weak text_view, @weak progress_bar, @weak cancel_btn, @weak title4, @strong target_disk, @strong target_variant, @strong cancel_sender, @strong pulse_timeout, @weak grub_switch => move |_| {
         stack.set_visible_child_name("page4");
         cancel_btn.set_visible(true);
         cancel_btn.set_label("Cancel Install");
@@ -469,6 +477,7 @@ fn build_ui(app: &Application) {
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
+                let install_grub = grub_switch.is_active();
                 let bootc_cmd = format!(
                     "killall -9 bootc skopeo 2>/dev/null || true; for p in {}*; do umount -l $p 2>/dev/null || true; done; umount -l /run/bootc/mounts/rootfs 2>/dev/null || true; btrfs device scan --forget 2>/dev/null || true; wipefs -af {}* 2>/dev/null || true; bootc install to-disk --generic-image --wipe --filesystem btrfs --bootloader none --source-imgref docker://{} {}", 
                     disk, disk, variant, disk
@@ -520,8 +529,8 @@ fn build_ui(app: &Application) {
                     Ok(s) if s.success() => {
                         let _ = sender.send("95% Installing bootloader...".to_string());
                         let bootloader_cmd = format!(
-                            "EFI_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' | head -n1 | awk '{{print $1}}'); ROOT_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i '4f68bce3-e8cd-4db1-96e7-fbcaf984b709' | head -n1 | awk '{{print $1}}'); if [ -n \"$EFI_PART\" ] && [ -n \"$ROOT_PART\" ]; then mkdir -p /tmp/efi_mnt /tmp/root_mnt; umount -l $EFI_PART 2>/dev/null || true; umount -l $ROOT_PART 2>/dev/null || true; mount $ROOT_PART /tmp/root_mnt; mount $EFI_PART /tmp/efi_mnt && bootctl install --esp-path=/tmp/efi_mnt && mkdir -p /tmp/efi_mnt/ostree && cp -r /tmp/root_mnt/boot/ostree/* /tmp/efi_mnt/ostree/ && mkdir -p /tmp/efi_mnt/loader/entries && cp /tmp/root_mnt/boot/loader/entries/*.conf /tmp/efi_mnt/loader/entries/ && sed -i 's|/boot/ostree|/ostree|g' /tmp/efi_mnt/loader/entries/*.conf && sed -i 's/bootloader=none/bootloader=systemd-boot/' /tmp/root_mnt/ostree/repo/config && umount /tmp/efi_mnt && umount /tmp/root_mnt; fi",
-                            disk, disk
+                            "EFI_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' | head -n1 | awk '{{print $1}}'); ROOT_PART=$(lsblk -rno PATH,PARTTYPE {} | grep -i '4f68bce3-e8cd-4db1-96e7-fbcaf984b709' | head -n1 | awk '{{print $1}}'); if [ -n \"$EFI_PART\" ] && [ -n \"$ROOT_PART\" ]; then mkdir -p /tmp/efi_mnt /tmp/root_mnt; umount -l $EFI_PART 2>/dev/null || true; umount -l $ROOT_PART 2>/dev/null || true; mount $ROOT_PART /tmp/root_mnt; mount $EFI_PART /tmp/efi_mnt && bootctl install --esp-path=/tmp/efi_mnt && mkdir -p /tmp/efi_mnt/ostree && cp -r /tmp/root_mnt/boot/ostree/* /tmp/efi_mnt/ostree/ && mkdir -p /tmp/efi_mnt/loader/entries && cp /tmp/root_mnt/boot/loader/entries/*.conf /tmp/efi_mnt/loader/entries/ && sed -i 's|/boot/ostree|/ostree|g' /tmp/efi_mnt/loader/entries/*.conf && sed -i 's/bootloader=none/bootloader=systemd-boot/' /tmp/root_mnt/ostree/repo/config {} && umount /tmp/efi_mnt && umount /tmp/root_mnt; fi",
+                            disk, disk, if install_grub { "&& grub-install --target=x86_64-efi --efi-directory=/tmp/efi_mnt --bootloader-id=ApolloGRUB --recheck 2>/dev/null || true" } else { "" }
                         );
                         let _ = tokio::process::Command::new("pkexec")
                             .args(["bash", "-c", &bootloader_cmd])

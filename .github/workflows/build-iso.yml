@@ -174,7 +174,9 @@ jobs:
           echo "Uploading $FILENAME ($SIZE bytes)..."
           curl -T "$FILE_PATH" "$UPLOAD_URL"
           
+          EXP_DATE=$(date -d "+1 month" "+%d %B %Y")
           echo "DOWNLOAD_URL=$FILE_URL" >> $GITHUB_OUTPUT
+          echo "EXPIRATION_DATE=$EXP_DATE" >> $GITHUB_OUTPUT
       - name: Create Nightly Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
@@ -192,7 +194,7 @@ jobs:
             ### 💾 Downloads
             You can download the ISO from the GitHub Assets below, or use our high-speed alternative mirror:
             
-            - **Alternative Mirror (Ranoz - Valid for 1 month):** ${{ steps.ranoz-upload.outputs.DOWNLOAD_URL }}
+            [Download](${{ steps.ranoz-upload.outputs.DOWNLOAD_URL }}) (Expires on ${{ steps.ranoz-upload.outputs.EXPIRATION_DATE }})
           files: out/apollo-installer.iso
           prerelease: true
           make_latest: true
