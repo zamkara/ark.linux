@@ -5,6 +5,9 @@ ARG VARIANT=ark
 FROM docker.io/archlinux:latest
 ARG VARIANT
 
+LABEL ostree.bootable="true"
+LABEL containers.bootc="1"
+
 COPY aur-packages/*.pkg.tar.zst /tmp/
 COPY alga-binary/alga /usr/bin/alga
 RUN chmod +x /usr/bin/alga
