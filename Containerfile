@@ -35,7 +35,9 @@ RUN KERNEL="linux"; \
 # Enable plymouth and ostree in mkinitcpio, and configure Plymouth BGRT theme for silent boot
 RUN sed -i 's/\bblock filesystems\b/block plymouth ostree filesystems/g' /etc/mkinitcpio.conf && \
     mkdir -p /etc/plymouth && echo -e "[Daemon]\nTheme=bgrt" > /etc/plymouth/plymouthd.conf && \
-    mkinitcpio -P
+    mkinitcpio -P && \
+    KVER=$(ls -1 /usr/lib/modules | grep -v 'extramodules' | head -n 1) && \
+    cp /boot/initramfs-${KERNEL}.img /usr/lib/modules/$KVER/initramfs.img
 
 # Setup kernel args for completely silent boot (just BIOS logo + spinner)
 RUN mkdir -p /usr/lib/bootc/kargs.d && \
