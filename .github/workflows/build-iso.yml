@@ -8,15 +8,10 @@ on:
   workflow_dispatch:
 
 jobs:
-
-
   build-iso:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    outputs:
-      DOWNLOAD_URL: ${{ steps.ranoz-upload.outputs.DOWNLOAD_URL }}
-      EXPIRATION_DATE: ${{ steps.ranoz-upload.outputs.EXPIRATION_DATE }}
     steps:
       - uses: actions/checkout@v6
       - name: Set up dependencies
@@ -49,10 +44,38 @@ jobs:
           sudo podman run --rm --privileged -v $(pwd):/work -v $(pwd)/pacman-cache:/var/cache/pacman/pkg -w /work docker.io/archlinux:latest bash /work/.github/workflows/build_iso.sh
           sudo chown -R $USER:$USER out/ pacman-cache/
           mv out/*.iso out/ark-installer.iso
-      - name: Upload artifact
+      - name: Upload ISO Workspace Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ark-iso-internal
+          path: out/ark-installer.iso
+
+  upload-github:
+    needs: build-iso
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download ISO Workspace Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ark-iso-internal
+          path: out/
+      - name: Upload ISO to Github Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ark-iso
+          path: out/ark-installer.iso
+
+  upload-mirror:
+    needs: build-iso
+    runs-on: ubuntu-latest
+    outputs:
+      DOWNLOAD_URL: ${{ steps.ranoz-upload.outputs.DOWNLOAD_URL }}
+      EXPIRATION_DATE: ${{ steps.ranoz-upload.outputs.EXPIRATION_DATE }}
+    steps:
+      - name: Download ISO Workspace Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ark-iso-internal
           path: out/
       - name: Upload to Ranoz
         id: ranoz-upload
@@ -82,16 +105,16 @@ jobs:
           echo "EXPIRATION_DATE=$EXP_DATE" >> $GITHUB_OUTPUT
 
   release:
-    needs: [build-iso]
+    needs: [upload-github, upload-mirror]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Download ISO artifact
+      - name: Download ISO Workspace Artifact
         uses: actions/download-artifact@v4
         with:
-          name: ark-iso
+          name: ark-iso-internal
           path: out/
       - name: Create Nightly Release
         uses: softprops/action-gh-release@v2
@@ -109,7 +132,7 @@ jobs:
             ### 💾 Downloads
             You can download the ISO from the GitHub Assets below, or use our high-speed alternative mirror:
             
-            [Download](${{ needs.build-iso.outputs.DOWNLOAD_URL }}) (Expires on ${{ needs.build-iso.outputs.EXPIRATION_DATE }})
+            [Download](${{ needs.upload-mirror.outputs.DOWNLOAD_URL }}) (Expires on ${{ needs.upload-mirror.outputs.EXPIRATION_DATE }})
           files: out/ark-installer.iso
           prerelease: false
           make_latest: true
