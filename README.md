@@ -1,4 +1,4 @@
-# ark.linux
+# Ark: Archlinux immutable builder
 
 Build scripts and configurations for generating the bootable Live ISO of an immutable Arch Linux environment.
 
