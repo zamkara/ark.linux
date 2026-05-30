@@ -14,6 +14,12 @@ mkdir -p /work/.github/workflows/archiso/airootfs/usr/bin
 cp /work/alga-binary/alga /work/.github/workflows/archiso/airootfs/usr/bin/alga
 chmod +x /work/.github/workflows/archiso/airootfs/usr/bin/alga
 
+echo "==> Downloading MoreWaita icon theme..."
+mkdir -p /work/.github/workflows/archiso/airootfs/usr/share/icons
+git clone https://github.com/somepaulo/MoreWaita.git /tmp/MoreWaita
+cp -r /tmp/MoreWaita/* /work/.github/workflows/archiso/airootfs/usr/share/icons/MoreWaita/ 2>/dev/null || cp -r /tmp/MoreWaita /work/.github/workflows/archiso/airootfs/usr/share/icons/
+rm -rf /tmp/MoreWaita
+
 # Run mkarchiso
 sed -i 's/airootfs\.sfs/originium.sfs/g' /usr/bin/mkarchiso
 sed -i 's/airootfs\.sha512/originium.sha512/g' /usr/bin/mkarchiso
