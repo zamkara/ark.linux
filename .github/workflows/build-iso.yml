@@ -39,7 +39,7 @@ jobs:
           wget -q https://github.com/zamkara/ark-aur/releases/download/latest/bootc-0.1.18-1-x86_64.pkg.tar.zst || true
           # Note: We fallback to true just in case the release is still building, but ideally these should be present.
           # Alternatively, use GitHub API to fetch all assets from the latest release.
-          curl -s https://api.github.com/repos/zamkara/ark-aur/releases/tags/latest | jq -r '.assets[].browser_download_url' | wget -i -
+          curl -s https://api.github.com/repos/zamkara/ark-aur/releases/tags/latest | jq -r '.assets[].browser_download_url' | wget -i - || true
           cd ..
       - name: Download Alga Binary
         run: |
@@ -82,7 +82,7 @@ jobs:
         run: |
           mkdir -p aur-packages
           cd aur-packages
-          curl -s https://api.github.com/repos/zamkara/ark-aur/releases/tags/latest | jq -r '.assets[].browser_download_url' | wget -i -
+          curl -s https://api.github.com/repos/zamkara/ark-aur/releases/tags/latest | jq -r '.assets[].browser_download_url' | wget -i - || true
           cd ..
       - name: Download Alga Binary
         run: |
