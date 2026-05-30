@@ -20,7 +20,13 @@ jobs:
         run: |
           mkdir -p aur-packages
           cd aur-packages
-          curl -sL https://github.com/zamkara/ark-aur/releases/expanded_assets/latest | grep -o 'href="[^"]*\.pkg\.tar\.zst"' | cut -d'"' -f2 | sed 's|^|https://github.com|' | wget -qi - || true
+          URLS=$(curl -sL https://github.com/zamkara/ark-aur/releases/expanded_assets/latest | grep -o 'href="[^"]*\.pkg\.tar\.zst"' | cut -d'"' -f2 | sed 's|^|https://github.com|')
+          for url in $URLS; do
+            echo "Downloading $url"
+            wget -q --show-progress -c "$url" || echo "Failed to download $url"
+          done
+          echo "Downloaded packages:"
+          ls -lh
           cd ..
       - name: Download Alga Binary
         run: |
