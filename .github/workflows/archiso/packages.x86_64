@@ -72,7 +72,7 @@ python-yaml
 spice-vdagent
 # Desktop
 gdm
-gnome-console
+ptyxis
 gnome-control-center
 gnome-disk-utility
 gnome-keyring
