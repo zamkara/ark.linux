@@ -2,7 +2,7 @@
 set -e
 
 # Update and install dependencies
-pacman -Syu --noconfirm archiso base-devel git sudo
+pacman -Syu --noconfirm archiso base-devel git sudo grub
 
 # Create custom local pacman repository for the ISO
 mkdir -p /work/.github/workflows/archiso/custom_repo
@@ -15,6 +15,5 @@ cp /work/alga-binary/alga /work/.github/workflows/archiso/airootfs/usr/bin/alga
 chmod +x /work/.github/workflows/archiso/airootfs/usr/bin/alga
 
 # Run mkarchiso
-sed -i 's|mcopy -i "${efibootimg}" -s "${work_dir}/loader" ::/|mcopy -i "${efibootimg}" -s "${work_dir}/loader" ::/\n    if [[ -f "${profile}/efiboot/splash.bmp" ]]; then mcopy -i "${efibootimg}" "${profile}/efiboot/splash.bmp" ::/splash.bmp; fi|' /usr/bin/mkarchiso
 sed -i 's/airootfs.sfs/originium.sfs/g' /usr/bin/mkarchiso
 mkarchiso -v -w /work/workdir/ -o /work/out/ /work/.github/workflows/archiso/

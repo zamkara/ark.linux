@@ -10,7 +10,7 @@ iso_version="$(date +%Y.%m.%d)"
 install_dir="ark"
 buildmodes=('iso')
 bootmodes=(
-  'uefi.systemd-boot'
+  'uefi.grub.esp'
 )
 arch="x86_64"
 pacman_conf="pacman.conf"
