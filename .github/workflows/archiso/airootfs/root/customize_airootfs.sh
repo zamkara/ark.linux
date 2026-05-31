@@ -13,6 +13,7 @@ glib-compile-schemas /usr/share/glib-2.0/schemas || true
 
 # Generate all UTF-8 locales
 sed -i 's/^#\(.*UTF-8.*\)/\1/' /etc/locale.gen || true
+sed -i '/@/s/^/#/' /etc/locale.gen || true
 locale-gen
 
 # Rebuild initramfs so the patched hook is included!
