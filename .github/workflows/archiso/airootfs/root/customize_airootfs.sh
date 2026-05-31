@@ -10,5 +10,9 @@ rm -f /usr/share/applications/{bssh,bvnc,avahi-discover,qv4l2,qvidcap,stoken-gui
 
 # Compile schemas to ensure MoreWaita and app folders apply
 glib-compile-schemas /usr/share/glib-2.0/schemas || true
+
+# Generate locales
+locale-gen
+
 # Rebuild initramfs so the patched hook is included!
 mkinitcpio -P
