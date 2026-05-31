@@ -79,7 +79,6 @@ gnome-keyring
 gnome-session
 gnome-settings-daemon
 gnome-shell
-gnome-shell-extensions
 xorg-server
 grub
 bootc
