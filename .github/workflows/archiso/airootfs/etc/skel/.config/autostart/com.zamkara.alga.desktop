@@ -1,7 +1,7 @@
 # Signature: emFta2FyYQ==
 [Desktop Entry]
-Name=Ark Wizard
-Comment=Install Ark Linux to your system
+Name=Install Arch Linux
+Comment=Install Arch Linux to your system
 Exec=alga
 Icon=/usr/share/icons/MoreWaita/scalable/devices/drive-harddisk-solidstate.svg
 Terminal=false
