@@ -31,6 +31,14 @@ systemctl enable gdm NetworkManager
 systemctl set-default graphical.target
 systemctl mask ostree-prepare-root.service
 
+# Force software rendering for QEMU bochs-drm (no 3D acceleration = no render node)
+# GNOME Shell/mutter crashes on GPU init without hardware 3D support
+cat >> /etc/environment <<'EOF'
+LIBGL_ALWAYS_SOFTWARE=true
+GALLIUM_DRIVER=llvmpipe
+MESA_LOADER_DRIVER_OVERRIDE=swrast
+EOF
+
 # Disable GNOME Initial Setup for the live ark user (not for installed system)
 mkdir -p /home/ark/.config
 echo "yes" > /home/ark/.config/gnome-initial-setup-done

@@ -71,6 +71,7 @@ python-yaml
 # Spice
 spice-vdagent
 # Desktop
+mesa
 gdm
 ptyxis
 gnome-control-center
