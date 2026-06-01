@@ -5,20 +5,15 @@ set -e
 sed -i 's/airootfs\.sfs/originium.sfs/g' /usr/lib/initcpio/hooks/archiso || true
 sed -i 's/airootfs\.sha512/originium.sha512/g' /usr/lib/initcpio/hooks/archiso || true
 
-# L1: Only keep: Ark Wizard, Disk (gnome-disk-utility), Ptyxis, Settings
-# Remove ALL other .desktop files except the ones we need
-find /usr/share/applications -name "*.desktop" | while read f; do
-    base=$(basename "$f")
-    case "$base" in
-        org.gnome.DiskUtility.desktop|\
-        org.gnome.Ptyxis.desktop|\
-        org.gnome.Settings.desktop|\
-        com.zamkara.alga.desktop)
-            ;;  # keep these
-        *)
-            rm -f "$f" || true
-            ;;
-    esac
+# L1: Remove only specific bloatware .desktop files.
+# Keep everything else (gnome-control-center panels etc. must remain intact).
+for f in bssh.desktop bvnc.desktop avahi-discover.desktop qv4l2.desktop \
+         qvidcap.desktop stoken-gui.desktop stoken-gui-small.desktop \
+         org.gnome.Extensions.desktop org.gnome.TextEditor.desktop \
+         lstopo.desktop hwloc-ls.desktop org.gnome.Logs.desktop \
+         org.gnome.Console.desktop ibus.desktop ibus-setup.desktop \
+         ibus-wayland.desktop; do
+    rm -f "/usr/share/applications/$f" 2>/dev/null || true
 done
 
 # L2: Rename Ptyxis to Terminal in live ISO
