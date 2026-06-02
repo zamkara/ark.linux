@@ -11,13 +11,13 @@ for f in bssh.desktop bvnc.desktop avahi-discover.desktop qv4l2.desktop \
          qvidcap.desktop stoken-gui.desktop stoken-gui-small.desktop \
          org.gnome.Extensions.desktop org.gnome.TextEditor.desktop \
          lstopo.desktop hwloc-ls.desktop org.gnome.Logs.desktop \
-         org.gnome.Console.desktop ibus.desktop ibus-setup.desktop \
+         ibus.desktop ibus-setup.desktop \
          ibus-wayland.desktop; do
     rm -f "/usr/share/applications/$f" 2>/dev/null || true
 done
 
-# L2: Rename Ptyxis to Terminal in live ISO
-sed -i 's/^Name=.*/Name=Terminal/' /usr/share/applications/org.gnome.Ptyxis.desktop 2>/dev/null || true
+# L2: Rename Console to Terminal in live ISO
+sed -i 's/^Name=.*/Name=Terminal/' /usr/share/applications/org.gnome.Console.desktop 2>/dev/null || true
 
 # Compile schemas to ensure MoreWaita and app folders apply
 glib-compile-schemas /usr/share/glib-2.0/schemas || true
