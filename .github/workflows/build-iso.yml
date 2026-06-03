@@ -9,7 +9,7 @@ on:
     inputs:
       force:
         description: 'Force build regardless of digest'
-        default: false
+        default: true
         type: boolean
 
 env:
