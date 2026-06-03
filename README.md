@@ -4,7 +4,7 @@
   <img alt="Ark Linux Logo" src="/data/assets/ic_dark.svg" width="256">
 </picture>
 
-# Ark: Immutable Arch Linux Builder
+# Ark: Vanila Immutable Arch Linux
 
 Build scripts and configurations for generating a bootable Live ISO of an immutable Arch Linux environment powered by OSTree and bootc technology.
 
