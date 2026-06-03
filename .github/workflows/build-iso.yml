@@ -6,9 +6,145 @@ on:
   schedule:
     - cron: '0 2 * * 0'
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force build regardless of digest'
+        default: false
+        type: boolean
+
+env:
+  CACHE_KEY_PREFIX: iso-digest
 
 jobs:
+  check-digest:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    outputs:
+      needs-build: ${{ steps.decide.outputs.needs-build }}
+      reason: ${{ steps.decide.outputs.reason }}
+      digest: ${{ steps.digest.outputs.value }}
+      aur-sha: ${{ steps.aur.outputs.sha }}
+      alga-sha: ${{ steps.alga.outputs.sha }}
+    steps:
+      - name: Get current archlinux:latest digest
+        id: digest
+        run: |
+          DIGEST=$(curl -sS \
+            -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+            "https://registry.hub.docker.com/v2/library/archlinux/manifests/latest" 2>/dev/null | \
+            jq -r '.config.digest // empty')
+          echo "value=${DIGEST:-unknown}" >> $GITHUB_OUTPUT
+          echo "Current archlinux digest: ${DIGEST:-unknown}"
+
+      - name: Check ark-aur latest commit
+        id: aur
+        run: |
+          SHA=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/zamkara/ark-aur/commits/main 2>/dev/null | \
+            jq -r '.sha // empty')
+          echo "sha=${SHA:-unknown}" >> $GITHUB_OUTPUT
+          if [ -n "$SHA" ]; then
+            STATUS=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/zamkara/ark-aur/commits/$SHA/status 2>/dev/null | \
+              jq -r '.state // empty')
+            echo "ci=${STATUS:-unknown}" >> $GITHUB_OUTPUT
+          else
+            echo "ci=unknown" >> $GITHUB_OUTPUT
+          fi
+          echo "ark-aur: sha=$SHA ci=$STATUS"
+
+      - name: Check alga latest commit
+        id: alga
+        run: |
+          SHA=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/zamkara/alga/commits/main 2>/dev/null | \
+            jq -r '.sha // empty')
+          echo "sha=${SHA:-unknown}" >> $GITHUB_OUTPUT
+          if [ -n "$SHA" ]; then
+            STATUS=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/zamkara/alga/commits/$SHA/status 2>/dev/null | \
+              jq -r '.state // empty')
+            echo "ci=${STATUS:-unknown}" >> $GITHUB_OUTPUT
+          else
+            echo "ci=unknown" >> $GITHUB_OUTPUT
+          fi
+          echo "alga: sha=$SHA ci=$STATUS"
+
+      - name: Restore cached digest
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: digest-cache.txt
+          key: ${{ env.CACHE_KEY_PREFIX }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ env.CACHE_KEY_PREFIX }}-
+          fail-on-cache-miss: false
+
+      - name: Decide whether to build
+        id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "needs-build=true" >> $GITHUB_OUTPUT
+            echo "reason=push" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
+            echo "needs-build=true" >> $GITHUB_OUTPUT
+            echo "reason=force" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CURRENT="${{ steps.digest.outputs.value }}"
+          AUR_CURRENT="${{ steps.aur.outputs.sha }}"
+          AUR_CI="${{ steps.aur.outputs.ci }}"
+          ALGA_CURRENT="${{ steps.alga.outputs.sha }}"
+          ALGA_CI="${{ steps.alga.outputs.ci }}"
+
+          CACHED=""
+          AUR_CACHED=""
+          ALGA_CACHED=""
+          CACHED_TS=""
+          if [ -f digest-cache.txt ]; then
+            CACHED=$(sed -n '1p' digest-cache.txt)
+            AUR_CACHED=$(sed -n '2p' digest-cache.txt)
+            ALGA_CACHED=$(sed -n '3p' digest-cache.txt)
+            CACHED_TS=$(sed -n '4p' digest-cache.txt)
+          fi
+
+          NOW=$(date +%s)
+          needs_build="false"
+          reason="skip-no-change"
+
+          if [ -z "$CACHED" ]; then
+            needs_build="true"
+            reason="initial-build"
+          elif [ "$CURRENT" != "$CACHED" ]; then
+            needs_build="true"
+            reason="update-archlinux"
+          elif [ "$AUR_CURRENT" != "$AUR_CACHED" ] && [ "$AUR_CI" = "success" ]; then
+            needs_build="true"
+            reason="update-aur"
+          elif [ "$ALGA_CURRENT" != "$ALGA_CACHED" ] && [ "$ALGA_CI" = "success" ]; then
+            needs_build="true"
+            reason="update-alga"
+          elif [ -n "$CACHED_TS" ] && [ $((NOW - CACHED_TS)) -gt $((7 * 86400)) ]; then
+            needs_build="true"
+            reason="weekly-fallback"
+          fi
+
+          echo "archlinux: cached=$CACHED current=$CURRENT"
+          echo "ark-aur: cached=$AUR_CACHED current=$AUR_CURRENT ci=$AUR_CI"
+          echo "alga: cached=$ALGA_CACHED current=$ALGA_CURRENT ci=$ALGA_CI"
+
+          echo "needs-build=$needs_build" >> $GITHUB_OUTPUT
+          echo "reason=$reason" >> $GITHUB_OUTPUT
+
   build-iso:
+    needs: [check-digest]
+    if: needs.check-digest.outputs.needs-build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -140,3 +276,29 @@ jobs:
           files: out/ark-installer.iso
           prerelease: false
           make_latest: true
+
+  update-cache:
+    needs: [check-digest, build-iso]
+    if: |
+      !cancelled() &&
+      needs.check-digest.outputs.needs-build == 'true' &&
+      needs.build-iso.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Prepare cache content
+        run: |
+          {
+            echo "${{ needs.check-digest.outputs.digest }}"
+            echo "${{ needs.check-digest.outputs.aur-sha }}"
+            echo "${{ needs.check-digest.outputs.alga-sha }}"
+            date +%s
+          } > digest-cache.txt
+          cat digest-cache.txt
+
+      - name: Save digest cache
+        uses: actions/cache/save@v4
+        with:
+          path: digest-cache.txt
+          key: ${{ env.CACHE_KEY_PREFIX }}-${{ github.run_id }}
