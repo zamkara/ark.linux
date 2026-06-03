@@ -4,31 +4,24 @@
   <img alt="Ark Linux Logo" src="/data/assets/ic_dark.svg" width="256">
 </picture>
 
-# Ark: Vanila Immutable Arch Linux
+# Ark: Vanilla Immutable Arch Linux
 
-Build scripts and configurations for generating a bootable Live ISO of an immutable Arch Linux environment powered by OSTree and bootc technology.
+Build scripts and configs for spinning up a bootable Live ISO of an immutable Arch Linux env — powered by OSTree and bootc.
 
-This project packages vanilla Arch Linux into an OSTree/bootc-compatible container image and provides an ISO for seamless installation. It is not a separate distribution—the underlying system remains strictly Arch Linux, enhanced with modern container-native deployment mechanisms.
+Not a separate distro. The underlying system is strictly Arch Linux, just wrapped with modern container-native deployment mechanics. Same Arch, just atomic.
+
+> ⚠️ **Heads up — this is very early stage.** Expect bugs. Lots of 'em. For testing only — don't run this on anything you care about. You've been warned.
 
 ## System Architecture
 
-Ark Linux is built upon three primary components:
-
-### 1. **OSTree + bootc** - Container-Native Deployments
-Modern image-based deployment system ensuring system state matches tested build artifacts.
-
-### 2. **Alga** - Native Installer  
-GTK4 Rust-based installer with asynchronous operations, real-time progress extraction, and graceful cancellation handling.
-
-### 3. **CI/CD Pipeline** - Automated ISO Generation
-Fully automated build process leveraging GitHub Actions and OCI Containerfiles to generate bootable ISO artifacts.
+Three things hold this together. **OSTree + bootc** handles image-based deployments — system state always matches what was tested in the build, no surprises. **Alga** is the native installer; GTK4 Rust-based, async ops, real-time progress, graceful cancellation — handles it. And the **CI/CD pipeline** automates everything else: GitHub Actions + OCI Containerfiles, push → ISO, that's it.
 
 ## Build Requirements
 
 - `podman`
 - `wget`, `curl`, `jq`
-- Root privileges (for `mkarchiso`)
-- Sufficient disk space (~10GB for build artifacts)
+- Root (for `mkarchiso`)
+- ~10GB free disk space
 
 ## Quick Start
 
@@ -38,7 +31,7 @@ Fully automated build process leveraging GitHub Actions and OCI Containerfiles t
 sudo bash .github/workflows/build_iso.sh
 ```
 
-The resulting ISO will be located in the `out/` directory.
+Output lands in `out/`.
 
 ### Testing with QEMU
 
@@ -49,104 +42,101 @@ qemu-system-x86_64 -m 4096 -cdrom out/install.iso -boot d
 ### Testing with GNOME Boxes
 
 1. Open GNOME Boxes
-2. Click "+" to create a new virtual machine
-3. Select the generated ISO file
-4. Follow the Alga installer prompts
+2. Hit "+" → new VM
+3. Point it at the ISO
+4. Follow Alga's prompts
 
 ## Repository Structure
 
-- **[ark.linux](https://github.com/zamkara/ark.linux)** - ISO generation using `archiso` and `bootc-image-builder`
-- **[ark-image](https://github.com/zamkara/ark-image)** - Base container image definitions and OS package manifests
-- **[alga](https://github.com/zamkara/alga)** - GTK4 Rust frontend for `bootc` installation and system updates
-- **[ark-aur](https://github.com/zamkara/ark-aur)** - Custom repository for pre-compiled AUR packages
+- **[ark.linux](https://github.com/zamkara/ark.linux)** — ISO generation via `archiso` and `bootc-image-builder`
+- **[ark-image](https://github.com/zamkara/ark-image)** — Base container image defs and OS package manifests
+- **[alga](https://github.com/zamkara/alga)** — GTK4 Rust frontend for `bootc` install and system updates
+- **[ark-aur](https://github.com/zamkara/ark-aur)** — Custom repo for pre-compiled AUR packages
 
-## Documentation
+## Docs
 
-Comprehensive technical documentation is available in the `docs/` directory:
+All technical docs live in `docs/`:
 
-- **[Architecture and Vision](docs/Architecture-and-Vision.md)** - Core design philosophy and system anatomy
-- **[Bootloader Implementation](docs/Bootloader-Implementation.md)** - Bootloader and firmware integration
-- **[Installer Mechanics](docs/Installer-Mechanics.md)** - Technical details of the Alga installer
-- **[Builder Mechanics](docs/05-Builder-Mechanics.md)** - Automated ISO generation pipeline
-- **[Alga Source Code](docs/06-Alga-Source-Code.md)** - Source code architecture and async patterns
-- **[OSTree and bootc](docs/07-OSTree-and-Bootc.md)** - Immutable filesystem layout and atomic updates
-- **[Troubleshooting](docs/08-Troubleshooting.md)** - Common issues and diagnostics
-- **[Local Testing](docs/09-Local-Testing.md)** - Virtualization and testing guidelines
+- **[Architecture and Vision](docs/Architecture-and-Vision.md)** — Core design philosophy and system anatomy
+- **[Bootloader Implementation](docs/Bootloader-Implementation.md)** — Bootloader and firmware integration
+- **[Installer Mechanics](docs/Installer-Mechanics.md)** — Technical details of the Alga installer
+- **[Builder Mechanics](docs/05-Builder-Mechanics.md)** — Automated ISO generation pipeline
+- **[Alga Source Code](docs/06-Alga-Source-Code.md)** — Source code architecture and async patterns
+- **[OSTree and bootc](docs/07-OSTree-and-Bootc.md)** — Immutable filesystem layout and atomic updates
+- **[Troubleshooting](docs/08-Troubleshooting.md)** — Common issues and diagnostics
+- **[Local Testing](docs/09-Local-Testing.md)** — Virtualization and testing guidelines
 
 ## Development
 
 ### Prerequisites
 
-- Rust 1.70+ (for Alga installer builds)
-- GTK4 development libraries
-- Containerfile-compatible runtime (podman recommended)
+- Rust 1.70+ (for Alga builds)
+- GTK4 dev libraries
+- Podman (or any Containerfile-compatible runtime)
 
 ### Building Locally
 
 ```bash
-# Clone the repository
 git clone https://github.com/zamkara/ark.linux.git
 cd ark.linux
 
-# Review the Containerfile structure
+# Poke around the Containerfile first
 cat Containerfile
 
-# Build with podman (optional for development)
+# Optional local build
 podman build -t ark-os:dev .
 
-# Generate ISO
+# Generate the ISO
 sudo bash .github/workflows/build_iso.sh
 ```
 
-## Installation Guide
+## Installation
 
-1. **Boot from ISO** - Write the ISO to a USB drive or boot directly
-2. **Launch Alga** - Select "Install Ark Linux" from the boot menu
-3. **Select Target Drive** - Choose your installation destination
-4. **Wait for Completion** - Monitor progress in the Alga terminal
-5. **Reboot** - System will restart with immutable Arch Linux ready to use
+1. **Boot from ISO** — Write it to a USB or boot directly
+2. **Launch Alga** — Hit "Install Ark Linux" from the boot menu
+3. **Pick target drive** — Choose where it goes
+4. **Wait** — Watch progress in the Alga terminal
+5. **Reboot** — Done. Immutable Arch, ready to go.
 
 ## Post-Installation
 
-After installation, update your system:
-
 ```bash
-# Check available updates
+# Check for updates
 bootc check-update
 
-# Apply updates (atomic, with rollback capability)
+# Apply 'em — atomic, rollback-capable
 bootc upgrade
 
-# Rollback if needed
+# Regret it? Roll back.
 bootc rollback
 ```
 
 ## System Layout
 
 ```
-/                          - Immutable root (read-only)
-├── /etc                   - Configuration (mutable, 3-way merged on updates)
-├── /var                   - Variable data, user home (mutable)
-├── /usr                   - Immutable system binaries and libraries
-└── /opt                   - Additional immutable applications
+/                          — Immutable root (read-only)
+├── /etc                   — Config (mutable, 3-way merged on updates)
+├── /var                   — Variable data, user home (mutable)
+├── /usr                   — Immutable system binaries and libraries
+└── /opt                   — Additional immutable applications
 ```
 
-## Credits & Inspiration
+## Credits
 
-This project draws inspiration from and builds upon the excellent work of:
+Builds on the work of:
 
-- **[Fedora Silverblue](https://silverblue.fedoraproject.org/)** - Pioneer of container-native Linux desktop environments
-- **[Arch Linux](https://archlinux.org/)** - Powerful and flexible Linux distribution with excellent package management
-- **[OSTree](https://ostreedev.github.io/ostree/)** - Git-like versioning for OS binaries
-- **[bootc](https://github.com/containers/bootc)** - Container-to-bootable-system tool
-- **[GNOME](https://www.gnome.org/)** - Modern desktop environment and development libraries
+- **[Fedora Silverblue](https://silverblue.fedoraproject.org/)** — Pioneer of container-native Linux desktops
+- **[Arch Linux](https://archlinux.org/)** — The base. The goat.
+- **[OSTree](https://ostreedev.github.io/ostree/)** — Git-like versioning for OS binaries
+- **[bootc](https://github.com/containers/bootc)** — Container-to-bootable-system magic
+- **[GNOME](https://www.gnome.org/)** — Desktop env and dev libraries
 
 ## License
 
-This project and all its contents are proprietary intellectual property of Zamkara.
+Proprietary. All rights reserved — zamkara.
 
-Unauthorized copying, distribution, modification, reverse engineering, or use of any files within this repository, via any medium, is strictly prohibited without explicit written permission from the author.
+No copying, distributing, modifying, reverse engineering, or reuse of anything in here without explicit written permission. Don't.
 
 ---
 
-**Note:** For questions, bug reports, or feature requests, please open an issue on GitHub or contact the maintainers directly.
+**Questions, bugs, feature requests** — open an issue or hit up the maintainers directly.
