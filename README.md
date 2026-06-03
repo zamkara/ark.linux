@@ -1,7 +1,7 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/zamkara/ark.linux/main/assets/ic_dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/zamkara/ark.linux/main/assets/ic_light.svg">
-  <img alt="Ark Linux Logo" src="https://raw.githubusercontent.com/zamkara/ark.linux/main/assets/ic_light.svg" width="512">
+  <source media="(prefers-color-scheme: dark)" srcset="/data/assets/ic_light.svg">
+  <source media="(prefers-color-scheme: light)" srcset="/data/assets/ic_dark.svg">
+  <img alt="Ark Linux Logo" src="/data/assets/ic_dark.svg" width="256">
 </picture>
 
 # Ark: Immutable Arch Linux Builder
@@ -9,16 +9,6 @@
 Build scripts and configurations for generating a bootable Live ISO of an immutable Arch Linux environment powered by OSTree and bootc technology.
 
 This project packages vanilla Arch Linux into an OSTree/bootc-compatible container image and provides an ISO for seamless installation. It is not a separate distribution—the underlying system remains strictly Arch Linux, enhanced with modern container-native deployment mechanisms.
-
-## Features
-
-- 🔒 **Immutable Root Filesystem** - Read-only base system with atomic updates
-- 📦 **Container-Native** - OSTree + bootc for reliable, reproducible deployments
-- 🎨 **Native GTK4 Installer** - Modern `alga` installer built with Rust and Libadwaita
-- 🔄 **Atomic Updates** - A/B updates with automatic rollback on failure
-- 📋 **Transparent Installation** - Real-time progress tracking and system logs visible to users
-- 🚀 **CI/CD Automation** - Fully automated ISO generation via GitHub Actions
-- 📦 **Flatpak Integration** - Sandbox third-party applications for system stability
 
 ## System Architecture
 
