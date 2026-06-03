@@ -15,6 +15,8 @@ Build scripts and configs for spinning up a bootable Live ISO of an immutable Ar
 
 Not a separate distro. The underlying system is strictly Arch Linux, just wrapped with modern container-native deployment mechanics. Same Arch, just atomic.
 
+<img width="2560" height="1022" alt="CleanShot 2026-06-03 at 15 54 37" src="https://github.com/user-attachments/assets/f66ff10e-b1b8-41f2-aa0f-cadbbc6ebc2c" />
+
 > ⚠️ **Heads up this is very early stage.** Expect bugs. Lots of 'em. For testing only don't run this on anything you care about. You've been warned.
 
 ## System Architecture
