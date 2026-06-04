@@ -13,3 +13,12 @@ archiso/out/
 *.iso
 *.img
 *.zst
+
+# Backup/merge artifacts
+*.orig
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
