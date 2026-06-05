@@ -16,10 +16,9 @@
 
 Build scripts and configs for spinning up a bootable Live ISO of an immutable Arch Linux env powered by OSTree and bootc.
 
-Not a separate distro — underneath it's pure Arch Linux, delivered as an immutable image. Declarative package management comes built-in with Nix, pin host packages alongside the system image. Distrobox is pre-configured, ready to use. Zsh and fish are pre-installed with starship prompt, along with fastfetch, nano, git, base-devel, and GitHub CLI — dev-ready out of the box.
-
 <img width="1920" height="1080" alt="Screenshot from 2026-06-04 21-47-25" src="https://github.com/user-attachments/assets/bafc559d-e24f-48d7-bf8c-99adb8525217" />
 
+Not a separate distro — underneath it's pure Arch Linux, delivered as an immutable image. Declarative package management comes built-in with Nix, pin host packages alongside the system image. Distrobox is pre-configured, ready to use, dev-ready out of the box.
 
 > ⚠️ **Heads up this is very early stage.** Expect bugs. Lots of 'em. For testing only don't run this on anything you care about. You've been warned.
 
