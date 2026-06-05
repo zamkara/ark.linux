@@ -33,7 +33,24 @@ strace -e trace=file bootupctl backend generate-update-metadata /
 ```
 This command traces all file access attempts, allowing you to identify exactly which directories the binary is attempting to access before crashing.
 
-## 5. Restoring Git Remote Configurations
+## 5. Package Management on an Immutable Host
+
+Since the host filesystem is immutable, `pacman` is **not available** on the running system. It was intentionally removed from the image — changes via pacman would be lost on the next deployment rollback or upgrade.
+
+### How to install packages
+
+| Scenario | Tool | Command |
+|----------|------|---------|
+| Install a CLI tool on the host | **Nix** | `nix profile install nixpkgs#<package>` |
+| Install GUI apps | **Flatpak** | `flatpak install flathub <app>` |
+| Full Arch environment with pacman | **Distrobox** | `distrobox enter arch` |
+| Modify the image permanently | **Containerfile** | Edit `ark-image/Containerfile`, rebuild, push |
+
+Nix packages persist across upgrades because they live in `/nix`, outside OSTree's managed paths. Distrobox containers are stored in user home (`~/.local/share/distrobox`).
+
+If you see `pacman: command not found`, that's expected — use one of the alternatives above.
+
+## 6. Restoring Git Remote Configurations
 If the local repository loses its remote tracking data, restore it using the following canonical configuration:
 ```bash
 git remote add origin https://github.com/zamkara/ark.linux.git

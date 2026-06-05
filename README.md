@@ -10,10 +10,13 @@
 [![Arch Linux](https://img.shields.io/badge/base-Arch%20Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Podman](https://img.shields.io/badge/runtime-Podman-892CA0?style=flat-square&logo=podman&logoColor=white)](https://podman.io)
 [![GNOME](https://img.shields.io/badge/desktop-GNOME-4A86CF?style=flat-square&logo=gnome&logoColor=white)](https://www.gnome.org)
+[![Nix](https://img.shields.io/badge/declarative-Nix-5277C3?style=flat-square&logo=nixos&logoColor=white)](https://nixos.org)
+[![Distrobox](https://img.shields.io/badge/containerized-Distrobox-000000?style=flat-square&logo=podman&logoColor=white)](https://distrobox.it)
+[![Shell](https://img.shields.io/badge/shells-zsh%20|%20fish-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)]()
 
 Build scripts and configs for spinning up a bootable Live ISO of an immutable Arch Linux env powered by OSTree and bootc.
 
-Not a separate distro. The underlying system is strictly Arch Linux, just wrapped with modern container-native deployment mechanics. Same Arch, just atomic.
+Not a separate distro — underneath it's pure Arch Linux, delivered as an immutable image. Declarative package management comes built-in with Nix, pin host packages alongside the system image. Distrobox is pre-configured, ready to use. Zsh and fish are pre-installed with starship prompt, along with fastfetch, nano, git, base-devel, and GitHub CLI — dev-ready out of the box.
 
 <img width="1920" height="1080" alt="Screenshot from 2026-06-04 21-47-25" src="https://github.com/user-attachments/assets/bafc559d-e24f-48d7-bf8c-99adb8525217" />
 
@@ -117,6 +120,18 @@ bootc upgrade
 
 # Regret it? Roll back.
 bootc rollback
+
+# Install packages on host via Nix
+nix profile install nixpkgs#htop
+
+# Drop into a full Arch container with pacman
+distrobox enter arch
+
+# Switch default shell
+chsh -s /usr/bin/fish
+
+# System info
+fastfetch
 ```
 
 ## System Layout

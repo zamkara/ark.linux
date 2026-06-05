@@ -24,7 +24,7 @@ ark linux implements atomic updates. System upgrades never overwrite the active,
 Because `/usr` is immutable, applications and user configurations must adapt to the OSTree topography.
 - `/etc` (Configuration): Fully mutable. OSTree performs a 3-way merge during updates to ensure custom user configurations are preserved.
 - `/var` (Variable Data): Fully mutable. This directory stores dynamic state data, application logs, and user directories (`/var/home`).
-- **Application Distribution:** Third-party applications should be installed via Flatpak. Flatpak sandboxing ensures that base OS updates will never conflict with user-installed software dependencies.
+- **Application Distribution:** Third-party applications should be installed via Flatpak. For host-level packages, Nix is pre-installed (`nix profile install nixpkgs#<name>`). For full Arch environment with pacman access, Distrobox is pre-configured (`distrobox enter arch`).
 
 ## 4. Derived Container Images
 The primary advantage of `bootc` is the triviality of creating derived operating systems.

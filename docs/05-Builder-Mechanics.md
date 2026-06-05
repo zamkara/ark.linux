@@ -9,11 +9,14 @@ Key phases within the `Containerfile`:
 - **Base Image Acquisition:** `FROM ghcr.io/zamkara/ark.linux:ark-nvidia:latest`. This utilizes a pre-configured Arch Linux base image containing proprietary NVIDIA drivers and the default desktop environment provided by the upstream maintainers.
 - **Local Dependency Injection:** `COPY aur-packages/*.pkg.tar.zst /tmp/`. Custom, locally compiled AUR packages (including the Alga installer itself) are injected directly into the container filesystem.
 - **Critical Subsystem Installation:**
-  ```dockerfile
-  RUN pacman -Syu --noconfirm && \
-      pacman -S --noconfirm util-linux openssl grub efibootmgr dosfstools ostree skopeo btrfs-progs podman composefs
-  ```
-  These packages form the backbone of the OSTree and container deployment mechanisms. `skopeo` handles image retrieval, `ostree` manages the immutable filesystem layout, `composefs` guarantees read-only verification, and `btrfs-progs` supports the underlying partition format.
+  The current `Containerfile` installs a broader set of packages covering the full OSTree stack, GNOME desktop, and developer tooling. Key groups include:
+
+  - **OSTree / bootc stack:** `ostree skopeo composefs bootc`
+  - **Container runtime:** `podman distrobox`
+  - **Desktop environment:** `gnome-shell gnome-control-center gdm plymouth gnome-console`
+  - **Tooling:** `nix git base-devel util-linux openssl efibootmgr dosfstools e2fsprogs xfsprogs btrfs-progs ibus iso-codes shadow sudo nano fastfetch zsh fish starship github-cli`
+
+  Note that `pacman` is intentionally removed from the final image — the host is immutable and changes via pacman would be lost on redeploy. **Nix** is pre-installed for declarative host package management, and **Distrobox** provides access to a full Arch container with pacman when needed.
 - **Bootloader Configuration:** In alignment with the native bootloader implementation, `bootupd` dependency handling is minimized, and the image is prepared for native `systemd-boot` initialization during the hardware installation phase.
 
 ## 2. GitHub Actions Workflow (`build-iso.yml`)

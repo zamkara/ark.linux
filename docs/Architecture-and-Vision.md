@@ -22,5 +22,19 @@ Instead of relying on generic installers like Calamares, ark linux utilizes a cu
 ### 3. CI/CD Pipeline (Automated ISO Generation)
 The entire OS generation process is automated. The base image resides at `ghcr.io/zamkara/ark.linux:ark-nvidia:latest`. The `ark.linux` repository utilizes a `Containerfile` to layer local dependencies (e.g., AUR packages) on top of the base image, compiles the Alga installer, and relies on GitHub Actions to securely package the final `.iso` artifact.
 
+### 4. Pre-Built Package Management (Nix + Distrobox)
+Since the host filesystem is immutable (`/usr` read-only), traditional Arch package management via `pacman` is unavailable on the host. Two alternatives come pre-installed:
+
+- **Nix** — declarative, per-user package management for the host. Use `nix profile install nixpkgs#<package>` to install software alongside the system image. Packages are stored in `/nix` and survive image updates.
+- **Distrobox** — spins up a full Arch Linux container with pacman inside. Run `distrobox enter arch` for a seamless terminal session where `sudo pacman -S` works as expected. The container shares the host home directory and integrates with the desktop environment.
+
+This approach keeps the host lean and atomic while giving users full access to the Arch ecosystem when needed.
+
+### 5. Developer Tooling (Pre-Installed)
+The image ships with a curated set of developer tools to be productive immediately:
+- **Shells:** `zsh` and `fish` with `starship` prompt pre-configured
+- **Tools:** `git`, `nano`, `fastfetch`, `github-cli`
+- **Build:** `base-devel` for compiling packages
+
 ## Architectural Advantages
 By adopting a container-native approach, ark linux eliminates traditional dependency resolution failures on the client side. If a package build fails, it fails in the GitHub Actions pipeline, preventing broken images from ever reaching the end user.
