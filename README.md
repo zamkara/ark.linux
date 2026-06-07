@@ -14,17 +14,17 @@
 [![Distrobox](https://img.shields.io/badge/containerized-Distrobox-000000?style=flat-square&logo=podman&logoColor=white)](https://distrobox.it)
 [![Shell](https://img.shields.io/badge/shells-zsh%20|%20fish-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)]()
 
-Build scripts and configs for spinnin' up a bootable Live ISO of an immutable Arch Linux env powered by OSTree and bootc.
+Build scripts 'n configs for spinnin' up a bootable Live ISO of an immutable Arch Linux env powered by OSTree 'n bootc.
 
 <img width="1920" height="1080" alt="Screenshot from 2026-06-04 21-47-25" src="https://github.com/user-attachments/assets/bafc559d-e24f-48d7-bf8c-99adb8525217" />
 
-Not a separate distro — underneath it's pure Arch Linux, delivered as an immutable image. Declarative package management's built right in with Nix, pin host packages alongside the system image. Distrobox is pre-configured, ready to use, dev-ready outta the box.
+Not a separate distro — underneath it's pure Arch Linux, delivered as an immutable image. Declarative package management's built right in with Nix, pin host packages alongside the system image. Distrobox is pre-configured, dev-ready outta the box — no setup needed, just use it.
 
-> ⚠️ **Heads up — this is very early stage.** Expect bugs. Lotta 'em. For testin' only, don't run this on anythin' you care about. Ya been warned.
+> ⚠️ **Heads up — this is very early stage.** Expect bugs. Lotta 'em. For testin' only, don't run this on anythin' ya care about. Ya been warned.
 
 ## System Architecture
 
-Three things hold this together. **OSTree + bootc** handles image-based deployments — system state always matches whatcha tested in the build, no surprises. **Alga** is the native installer; GTK4 Rust-based, async ops, real-time progress, graceful cancellation — it's got it handled. And the **CI/CD pipeline** automates everythin' else: GitHub Actions + OCI Containerfiles, push → ISO, that's it.
+Three things're holdin' this together. **OSTree + bootc** handles image-based deployments — system state always matches whatcha tested in the build, no surprises. **Alga**'s the native installer; GTK4 Rust-based, async ops, real-time progress, graceful cancellation — it's got it handled. And the **CI/CD pipeline**'s automatin' everythin' else: GitHub Actions + OCI Containerfiles, push → ISO, that's it.
 
 ## Build Requirements
 
@@ -58,23 +58,23 @@ qemu-system-x86_64 -m 4096 -cdrom out/install.iso -boot d
 
 ## Repository Structure
 
-- **[ark.linux](https://github.com/zamkara/ark.linux)** ISO generation via `archiso` and `bootc-image-builder`
-- **[ark-image](https://github.com/zamkara/ark-image)** Base container image defs and OS package manifests
-- **[alga](https://github.com/zamkara/alga)** GTK4 Rust frontend for `bootc` install and system updates
+- **[ark.linux](https://github.com/zamkara/ark.linux)** ISO generation via `archiso` 'n `bootc-image-builder`
+- **[ark-image](https://github.com/zamkara/ark-image)** Base container image defs 'n OS package manifests
+- **[alga](https://github.com/zamkara/alga)** GTK4 Rust frontend for `bootc` install 'n system updates
 - **[ark-aur](https://github.com/zamkara/ark-aur)** Custom repo for pre-compiled AUR packages
 
 ## Docs
 
-All technical docs live in `docs/`:
+All technical docs're livin' in `docs/`:
 
-- **[Architecture and Vision](docs/Architecture-and-Vision.md)** Core design philosophy and system anatomy
-- **[Bootloader Implementation](docs/Bootloader-Implementation.md)** Bootloader and firmware integration
+- **[Architecture and Vision](docs/Architecture-and-Vision.md)** Core design philosophy 'n system anatomy
+- **[Bootloader Implementation](docs/Bootloader-Implementation.md)** Bootloader 'n firmware integration
 - **[Installer Mechanics](docs/Installer-Mechanics.md)** Technical details of the Alga installer
 - **[Builder Mechanics](docs/05-Builder-Mechanics.md)** Automated ISO generation pipeline
-- **[Alga Source Code](docs/06-Alga-Source-Code.md)** Source code architecture and async patterns
-- **[OSTree and bootc](docs/07-OSTree-and-Bootc.md)** Immutable filesystem layout and atomic updates
-- **[Troubleshooting](docs/08-Troubleshooting.md)** Common issues and diagnostics
-- **[Local Testing](docs/09-Local-Testing.md)** Virtualization and testing guidelines
+- **[Alga Source Code](docs/06-Alga-Source-Code.md)** Source code architecture 'n async patterns
+- **[OSTree and bootc](docs/07-OSTree-and-Bootc.md)** Immutable filesystem layout 'n atomic updates
+- **[Troubleshooting](docs/08-Troubleshooting.md)** Common issues 'n diagnostics
+- **[Local Testing](docs/09-Local-Testing.md)** Virtualization 'n testin' guidelines
 
 ## Development
 
@@ -104,7 +104,7 @@ sudo bash .github/workflows/build_iso.sh
 
 1. **Boot from ISO** Write it to a USB or boot directly
 2. **Launch Alga** Hit "Install Ark Linux" from the boot menu
-3. **Pick target drive** Choose where it goes
+3. **Pick target drive** Choose where it's goin'
 4. **Wait** Watch progress in the Alga terminal
 5. **Reboot** Done. Immutable Arch, ready to go.
 
@@ -139,16 +139,23 @@ fastfetch
 /                          Immutable root (read-only)
 ├── /etc                   Config (mutable, 3-way merged on updates)
 ├── /var                   Variable data, user home (mutable)
-├── /usr                   Immutable system binaries and libraries
+├── /usr                   Immutable system binaries 'n libraries
 └── /opt                   Additional immutable applications
 ```
 
+## Powered by
+
+- **[Pods](https://github.com/marhkb/pods)** GTK4+Rust Podman frontend — UI inspiration for Alga's container management layer
+- **[DistroShelf](https://github.com/ranfdev/DistroShelf)** GTK4 GUI for Distrobox — shaped how Distrobox integration's hangin' together in-session
+- **[MoreWaita](https://github.com/somepaulo/MoreWaita)** Expanded Adwaita icon theme — keepin' the desktop consistent 'n cohesive outta the box
+- **[nixpkgs](https://github.com/nixos/nixpkgs)** The Nix package collection — powerin' declarative host package management
+
 ## Credits
 
-Builds on the work of:
+Buildin' on the work of:
 
 - **[Fedora Silverblue](https://silverblue.fedoraproject.org/)** Pioneer of container-native Linux desktops
 - **[Arch Linux](https://archlinux.org/)** The base. The goat.
 - **[OSTree](https://ostreedev.github.io/ostree/)** Git-like versioning for OS binaries
 - **[bootc](https://github.com/containers/bootc)** Container-to-bootable-system magic
-- **[GNOME](https://www.gnome.org/)** Desktop env and dev libraries
+- **[GNOME](https://www.gnome.org/)** Desktop env 'n dev libraries
