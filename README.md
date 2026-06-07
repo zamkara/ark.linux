@@ -14,17 +14,17 @@
 [![Distrobox](https://img.shields.io/badge/containerized-Distrobox-000000?style=flat-square&logo=podman&logoColor=white)](https://distrobox.it)
 [![Shell](https://img.shields.io/badge/shells-zsh%20|%20fish-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)]()
 
-Build scripts and configs for spinning up a bootable Live ISO of an immutable Arch Linux env powered by OSTree and bootc.
+Build scripts and configs for spinnin' up a bootable Live ISO of an immutable Arch Linux env powered by OSTree and bootc.
 
 <img width="1920" height="1080" alt="Screenshot from 2026-06-04 21-47-25" src="https://github.com/user-attachments/assets/bafc559d-e24f-48d7-bf8c-99adb8525217" />
 
-Not a separate distro — underneath it's pure Arch Linux, delivered as an immutable image. Declarative package management comes built-in with Nix, pin host packages alongside the system image. Distrobox is pre-configured, ready to use, dev-ready out of the box.
+Not a separate distro — underneath it's pure Arch Linux, delivered as an immutable image. Declarative package management's built right in with Nix, pin host packages alongside the system image. Distrobox is pre-configured, ready to use, dev-ready outta the box.
 
-> ⚠️ **Heads up this is very early stage.** Expect bugs. Lots of 'em. For testing only don't run this on anything you care about. You've been warned.
+> ⚠️ **Heads up — this is very early stage.** Expect bugs. Lotta 'em. For testin' only, don't run this on anythin' you care about. Ya been warned.
 
 ## System Architecture
 
-Three things hold this together. **OSTree + bootc** handles image-based deployments system state always matches what was tested in the build, no surprises. **Alga** is the native installer; GTK4 Rust-based, async ops, real-time progress, graceful cancellation handles it. And the **CI/CD pipeline** automates everything else: GitHub Actions + OCI Containerfiles, push → ISO, that's it.
+Three things hold this together. **OSTree + bootc** handles image-based deployments — system state always matches whatcha tested in the build, no surprises. **Alga** is the native installer; GTK4 Rust-based, async ops, real-time progress, graceful cancellation — it's got it handled. And the **CI/CD pipeline** automates everythin' else: GitHub Actions + OCI Containerfiles, push → ISO, that's it.
 
 ## Build Requirements
 
@@ -35,7 +35,7 @@ Three things hold this together. **OSTree + bootc** handles image-based deployme
 
 ## Quick Start
 
-### Building the ISO
+### Buildin' the ISO
 
 ```bash
 sudo bash .github/workflows/build_iso.sh
@@ -43,13 +43,13 @@ sudo bash .github/workflows/build_iso.sh
 
 Output lands in `out/`.
 
-### Testing with QEMU
+### Testin' with QEMU
 
 ```bash
 qemu-system-x86_64 -m 4096 -cdrom out/install.iso -boot d
 ```
 
-### Testing with GNOME Boxes
+### Testin' with GNOME Boxes
 
 1. Open GNOME Boxes
 2. Hit "+" → new VM
@@ -84,7 +84,7 @@ All technical docs live in `docs/`:
 - GTK4 dev libraries
 - Podman (or any Containerfile-compatible runtime)
 
-### Building Locally
+### Buildin' Locally
 
 ```bash
 git clone https://github.com/zamkara/ark.linux.git
@@ -114,7 +114,7 @@ sudo bash .github/workflows/build_iso.sh
 # Check for updates
 bootc check-update
 
-# Apply 'em atomic, rollback-capable
+# Apply 'em — atomic, rollback-capable
 bootc upgrade
 
 # Regret it? Roll back.
