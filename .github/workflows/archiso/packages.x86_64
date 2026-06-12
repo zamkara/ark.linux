@@ -74,7 +74,7 @@ spice-vdagent
 gdm
 gnome-console
 gnome-control-center
-gnome-disk-utility
+gnome-disk-utility-git
 gnome-keyring
 gnome-session
 gnome-settings-daemon
