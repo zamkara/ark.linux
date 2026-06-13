@@ -156,18 +156,18 @@ jobs:
         run: |
           mkdir -p aur-packages
           cd aur-packages
-          URLS=$(curl -sL https://github.com/zamkara/ark-aur/releases/expanded_assets/latest | grep -o 'href="[^"]*\.pkg\.tar\.zst"' | cut -d'"' -f2 | sed 's|^|https://github.com|')
-          for url in $URLS; do
-            echo "Downloading $url"
-            wget -q --show-progress -c "$url" || echo "Failed to download $url"
-          done
+          python3 -c 'import urllib.request, json; req = urllib.request.Request("https://api.github.com/repos/zamkara/ark-aur/releases/latest", headers={"User-Agent": "Ark"}); data = json.loads(urllib.request.urlopen(req).read().decode()); [print(a["browser_download_url"]) for a in data.get("assets", []) if a["name"].endswith(".pkg.tar.zst")]' | wget -qi -
           echo "Downloaded packages:"
           ls -lh
           cd ..
       - name: Download Alga Package
         run: |
           cd aur-packages
-          curl -sL https://github.com/zamkara/alga/releases/expanded_assets/latest | grep -o 'href="[^"]*\.pkg\.tar\.zst"' | cut -d'"' -f2 | sed 's|^|https://github.com|' | wget -qi - || true
+          ALGA_URL=$(curl -s "https://api.github.com/repos/zamkara/alga/releases/latest" | grep -oP '"browser_download_url":\s*"\K[^"]+' | grep -v 'debug')
+          if [ -n "$ALGA_URL" ]; then
+            echo "Downloading Alga Package: $ALGA_URL"
+            wget -q "$ALGA_URL"
+          fi
           cd ..
       - name: Cache Pacman ISO
         uses: actions/cache@v4
