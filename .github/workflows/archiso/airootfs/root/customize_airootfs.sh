@@ -19,6 +19,20 @@ done
 # L2: Rename Console to Terminal in live ISO
 sed -i 's/^Name=.*/Name=Terminal/' /usr/share/applications/org.gnome.Console.desktop 2>/dev/null || true
 
+# L3: Ensure alga desktop entry is correct regardless of package version
+cat > /usr/share/applications/com.zamkara.alga.desktop << 'EOF'
+[Desktop Entry]
+Name=Ark Wizard
+GenericName=System Installer
+Comment=Install Ark Linux to your system
+Exec=alga
+Icon=drive-harddisk-solidstate
+Terminal=false
+Type=Application
+Categories=System;
+StartupNotify=true
+EOF
+
 # Compile schemas to ensure MoreWaita and app folders apply
 glib-compile-schemas /usr/share/glib-2.0/schemas || true
 
