@@ -156,17 +156,17 @@ jobs:
         run: |
           mkdir -p aur-packages
           cd aur-packages
-          python3 -c '
-import urllib.request, json, os
-token = os.environ.get("GITHUB_TOKEN", "")
-req = urllib.request.Request("https://api.github.com/repos/zamkara/ark-aur/releases/latest", headers={"User-Agent": "Ark"})
-if token:
-    req.add_header("Authorization", f"Bearer {token}")
-data = json.loads(urllib.request.urlopen(req).read().decode())
-for a in data.get("assets", []):
-    if a["name"].endswith(".pkg.tar.zst"):
-        print(a["browser_download_url"])
-' | wget -qi -
+          python3 << 'EOF' | wget -qi -
+          import urllib.request, json, os
+          token = os.environ.get("GITHUB_TOKEN", "")
+          req = urllib.request.Request("https://api.github.com/repos/zamkara/ark-aur/releases/latest", headers={"User-Agent": "Ark"})
+          if token:
+              req.add_header("Authorization", f"Bearer {token}")
+          data = json.loads(urllib.request.urlopen(req).read().decode())
+          for a in data.get("assets", []):
+              if a["name"].endswith(".pkg.tar.zst"):
+                  print(a["browser_download_url"])
+          EOF
           echo "Downloaded packages:"
           ls -lh
           cd ..
