@@ -14,18 +14,41 @@ Executing long-running system commands (such as disk imaging) on the main GUI th
 **Concurrency Implementation:**
 1. **`glib::MainContext::channel`**: Establishes a message-passing channel between background asynchronous threads and the GTK main thread. The UI binds to this channel using `receiver.attach(...)`.
 2. **`std::thread::spawn` & `tokio::runtime::Runtime`**: Initiating an installation spawns an isolated thread containing a dedicated `tokio` asynchronous runtime.
-3. The `tokio` runtime asynchronously executes the `bootc install to-disk` command (`tokio::process::Command`), capturing `stdout` and `stderr` streams non-blockingly. Log lines are dispatched to the UI via `sender.send(...)`, allowing the `TextView` to update seamlessly.
+3. The `tokio` runtime asynchronously executes the installation commands (`tokio::process::Command`), capturing `stdout` and `stderr` streams non-blockingly. Log lines are dispatched to the UI via `sender.send(...)`, allowing the `TextView` to update seamlessly.
 
-## 3. Dynamic Progress Extraction (`sanitize_log`)
+## 3. Installation Pipeline
+
+The installer runs two sequential command blocks via `pkexec`:
+
+**Block 1 — Disk preparation + OS install:**
+1. Kill orphan processes, unmount stale mounts, wipe disk
+2. Partition via `sfdisk` (GPT: 1GiB EFI + rest btrfs root)
+3. Format: `mkfs.vfat -F32` for EFI, `mkfs.btrfs` for root
+4. Create 8 btrfs subvolumes (`@`, `@var`, `@var-log`, `@var-cache`, `@var-tmp`, `@tmp`, `@snapshots`, `@opt`)
+5. Mount all subvolumes with `compress=zstd,noatime`
+6. `bootc install to-filesystem --bootloader none /mnt`
+7. Write fstab entries for all subvolumes into deployment `/etc/fstab`
+8. Write zram config if requested
+9. Unmount all subvolumes in reverse order
+
+**Block 2 — Bootloader install:**
+1. Re-mount root (`subvol=@`) and ESP at temp paths
+2. Install systemd-boot via `bootctl` (or GRUB2 if selected)
+3. Run `BLS_SYNC_SCRIPT` to generate initial boot entries
+4. Unmount
+
+## 4. Dynamic Progress Extraction (`sanitize_log`)
 Alga dynamically calculates installation progress by parsing the raw data stream from the `bootc` backend via the `sanitize_log(raw: &str)` function.
 - The function detects percentage indicators (e.g., `%`) within the stdout stream.
-- It parses backward from the indicator to extract numeric values, returning them to the UI thread to update the application window title (`title4.set_label`).
+- It parses backward from the indicator to extract numeric values, returning them to the UI thread to update the application window title.
 - The function also filters excessive low-level I/O metrics and translates abstract backend operations into user-friendly status updates.
 
-## 4. Asynchronous Cancellation Mechanisms
+## 5. Asynchronous Cancellation Mechanisms
 Alga implements robust interruption handling via the `tokio::select!` macro.
 The macro concurrently awaits:
 1. Standard output streams from the active installation process.
 2. A cancellation signal (`kill_rx`) triggered by the user interacting with the "Cancel" or "Back" buttons in the UI.
 
 If the `kill_rx` signal is received, the `tokio` runtime immediately terminates the child process (`child_install.kill()`) and executes the drive zeroing and unmounting protocols detailed in the Installer Mechanics documentation.
+</content>
+</invoke>

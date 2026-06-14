@@ -17,7 +17,7 @@ Using `bootc` (Bootable Containers), the OCI image is fetched and deployed direc
 Instead of relying on generic installers like Calamares, ark linux utilizes a custom-built installer named **Alga**.
 - **Technology Stack:** Written in Rust, utilizing the `tokio` asynchronous runtime for high-performance, non-blocking execution.
 - **User Interface:** Built with GTK4 and Libadwaita to provide a modern, responsive, and seamless graphical experience.
-- **Responsibilities:** Alga handles disk partitioning (BTRFS), executes the `bootc install to-disk` routine, parses backend logs for progress tracking, and natively configures the system bootloader.
+- **Responsibilities:** Alga handles UEFI-only disk partitioning (1GiB ESP + btrfs root with 8 subvolumes), executes `bootc install to-filesystem`, parses backend logs for progress tracking, and natively configures the system bootloader.
 
 ### 3. CI/CD Pipeline (Automated ISO Generation)
 The entire OS generation process is automated. The base image resides at `ghcr.io/zamkara/ark.linux:ark-nvidia:latest`. The `ark.linux` repository utilizes a `Containerfile` to layer local dependencies (e.g., AUR packages) on top of the base image, compiles the Alga installer, and relies on GitHub Actions to securely package the final `.iso` artifact.

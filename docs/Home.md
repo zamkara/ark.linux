@@ -13,7 +13,7 @@ This knowledge base serves as a permanent reference for developers and contribut
    Documentation detailing the technical decisions regarding the bootloader, specifically the transition from upstream `bootupd` to a native `bootctl install` approach via the installer.
 
 3. **[Installer Mechanics](Installer-Mechanics.md)**
-   A technical breakdown of the `alga` installer, covering robust partition management (btrfs locks), cancellation handling (disk zeroing), and progress extraction.
+   A technical breakdown of the `alga` installer, covering UEFI-only partitioning (1GiB ESP + btrfs root), btrfs subvolume layout, cancellation handling (disk zeroing), and progress extraction.
 
 4. **[Git Workflow and Remotes](Git-Workflow-and-Remotes.md)**
    Guidelines on the repository's dual-remote structure (GitLab and GitHub) and the primary pipeline triggers.

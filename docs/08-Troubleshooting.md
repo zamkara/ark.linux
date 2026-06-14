@@ -24,7 +24,7 @@ If the Alga GTK4 graphical interface crashes (e.g., via a Segmentation Fault) le
 - Press `Ctrl + Alt + F2` or `Ctrl + Alt + F3` (In GNOME Boxes, utilize the "Send Keys" menu in the top right corner).
 - This will drop you into the TTY Console.
 - Login using the `root` account.
-- From this interface, you can inspect system logs via `journalctl -xe` or execute `bootc install to-disk` manually to view unfiltered standard output.
+- From this interface, you can inspect system logs via `journalctl -xe` or run `alga` manually to view unfiltered output.
 
 ## 4. Tracing Backend Execution (`strace`)
 When investigating cryptic failures in binaries like `bootupctl` (e.g., unexpected Rust panics), system call tracing is the most effective diagnostic tool.
