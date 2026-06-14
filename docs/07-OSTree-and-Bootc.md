@@ -12,13 +12,14 @@ OSTree is a technology designed to manage bootable, immutable, and versionable f
 ark linux implements atomic updates. System upgrades never overwrite the active, running filesystem.
 
 **The Update Lifecycle:**
-1. The user initiates a system update via `bootc upgrade`.
+1. The user initiates a system update via `bootc upgrade` (or via Alga).
 2. The `bootc` daemon fetches the latest OCI container image delta from the remote registry (`ghcr.io`) in the background.
 3. `bootc` constructs a completely new filesystem tree (Deployment B) parallel to the currently running system (Deployment A). The active system remains untouched.
 4. If a power failure or network interruption occurs during the download, the system state remains intact because the active deployment was never modified.
-5. Upon successful verification of the new tree, `bootc` updates the Boot Loader Specification (BLS) entries in the EFI System Partition to point to the new deployment.
-6. A system reboot transitions the user into the updated environment.
-7. **Instant Rollbacks:** If the new update causes kernel panics or graphical failures, the user can reboot, intercept the `systemd-boot` menu, and select the previous deployment to instantly revert the system state.
+5. Upon successful verification of the new tree, `bls-sync.sh` runs automatically via `bootc-finalize-staged.service.d/bls-sync.conf`, creating BLS boot entries for both the new and current deployments.
+6. A system reboot transitions the user into the updated environment. The boot menu shows exactly 2 entries: new (current) and old (rollback).
+7. On each subsequent upgrade, OSTree prunes the oldest deployment, keeping exactly 2 at all times.
+8. **Instant Rollbacks:** If the new update causes kernel panics or graphical failures, the user can reboot, select the previous `Arch Linux YYYYMMDDHHMMSS` entry in systemd-boot to instantly revert.
 
 ## 3. Filesystem Mutability Topography
 Because `/usr` is immutable, applications and user configurations must adapt to the OSTree topography.

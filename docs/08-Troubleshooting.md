@@ -50,7 +50,15 @@ Nix packages persist across upgrades because they live in `/nix`, outside OSTree
 
 If you see `pacman: command not found`, that's expected — use one of the alternatives above.
 
-## 6. Restoring Git Remote Configurations
+## 6. Boot Menu Only Shows One Entry After Upgrade
+
+After `bootc upgrade`, the boot menu should always show 2 entries (current + rollback). If only 1 appears:
+
+- `bls-sync.sh` may have only found 1 deployment. Check that both deployments exist: `ls /sysroot/ostree/deploy/default/deploy/`
+- If `ark-bls-sync.service` runs after bootc prunes a deployment, only 1 will be found — this is expected behavior on the second boot after upgrade.
+- To manually trigger a re-sync: `sudo SYSROOT=/sysroot bash /usr/libexec/ark/bls-sync.sh`
+
+## 7. Restoring Git Remote Configurations
 If the local repository loses its remote tracking data, restore it using the following canonical configuration:
 ```bash
 git remote add origin https://github.com/zamkara/ark.linux.git

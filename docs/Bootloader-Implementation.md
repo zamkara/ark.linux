@@ -22,3 +22,15 @@ To ensure a robust and reliable boot sequence, ark linux completely bypasses the
 3. **Native Installation:** Immediately after `bootc` successfully deploys the root filesystem, the Alga installer assumes control. It dynamically locates the EFI System Partition (via GUID `c12a7328-f81f-11d2-ba4b-00a0c93ec93b`), mounts it, and executes the native `bootctl install --esp-path=...` command.
 
 **Result:** ark linux utilizes a pure, native `systemd-boot` implementation that fully complies with the Boot Loader Specification (BLS) and integrates seamlessly with OSTree deployments without relying on fragile workarounds.
+
+## BLS Entry Management (`bls-sync.sh`)
+
+Boot entries are not managed by bootc or ostree directly. Instead, a custom script `bls-sync.sh` (embedded in Alga as `BLS_SYNC_SCRIPT` and also at `ark-image/.github/bls-sync.sh`) handles all entry lifecycle:
+
+- **Discovery:** Reads all deployments directly from `$DEPLOY_BASE/` via `ls -d` (primary), falling back to `ostree admin status`. Using the filesystem directly ensures staged and rollback deployments are always included.
+- **Entry naming:** `Arch Linux YYYYMMDDHHMMSS` derived from the deployment directory's modification time.
+- **Cleanup:** Removes entries for deployments no longer on disk, and removes any auto-generated `ostree:` entries.
+- **boot.0 symlink:** Creates `/sysroot/ostree/boot.0/default/$bootcsum/$bootserial` required by `ostree-prepare-root`.
+- **Runs:** On every boot (`ark-bls-sync.service`), and after every upgrade (`bootc-finalize-staged.service.d/bls-sync.conf`).
+
+**Important:** `BLS_SYNC_SCRIPT` in `alga/src/main.rs` and `ark-image/.github/bls-sync.sh` must always be kept identical. When calling via `pkexec`, env vars (`SYSROOT`, `ESP`) must be embedded inline (`export SYSROOT=...; export ESP=...; <script>`) since `pkexec` strips environment variables.
