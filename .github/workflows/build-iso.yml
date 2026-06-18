@@ -170,11 +170,18 @@ jobs:
       - name: Download Alga Package
         run: |
           cd aur-packages
-          ALGA_URL=$(curl -s "https://api.github.com/repos/zamkara/alga/releases/latest" | jq -r '.assets[] | select(.name | contains("debug") | not) | .browser_download_url' | head -1)
-          if [ -n "$ALGA_URL" ]; then
-            echo "Downloading Alga Package: $ALGA_URL"
-            wget -q "$ALGA_URL"
-          fi
+          python3 << 'EOF' | wget -qi -
+          import urllib.request, json
+          req = urllib.request.Request(
+              "https://api.github.com/repos/zamkara/alga/releases/latest",
+              headers={"User-Agent": "Ark"}
+          )
+          data = json.loads(urllib.request.urlopen(req).read().decode())
+          for a in data.get("assets", []):
+              if a["name"].endswith(".pkg.tar.zst") and "debug" not in a["name"]:
+                  print(a["browser_download_url"])
+                  break
+          EOF
           cd ..
       - name: Cache Pacman ISO
         uses: actions/cache@v4
