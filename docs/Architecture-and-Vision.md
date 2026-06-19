@@ -30,10 +30,7 @@ Since the host filesystem is immutable (`/usr` read-only), traditional Arch pack
 
 This approach keeps the host lean and atomic while giving users full access to the Arch ecosystem when needed.
 
-### 5. Default Browser (Helium)
-The image ships with **Helium** — a de-Googled, privacy-focused Chromium fork from [imputnet/helium-linux](https://github.com/imputnet/helium-linux). It is installed in all variants via ark-aur and updates automatically on the Mon/Wed/Fri ark-aur rebuild cycle.
-
-### 6. Developer Tooling (Pre-Installed)
+### 5. Developer Tooling (Pre-Installed)
 The image ships with a curated set of developer tools to be productive immediately:
 - **Shells:** `zsh` and `fish` with `starship` prompt pre-configured
 - **Tools:** `git`, `nano`, `fastfetch`, `github-cli`

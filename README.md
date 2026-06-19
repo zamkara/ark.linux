@@ -31,7 +31,6 @@ Three things're holdin' this together. **OSTree + bootc** handles image-based de
 | Software | Details |
 |----------|---------|
 | GNOME | Full desktop environment |
-| Helium | De-Googled Chromium-based browser (from [imputnet/helium-linux](https://github.com/imputnet/helium-linux)) |
 | Podman + Distrobox | Pre-configured containerization |
 | Nix | Declarative host package management |
 | Plymouth | Boot splash screen |
@@ -74,7 +73,7 @@ qemu-system-x86_64 -m 4096 -cdrom out/install.iso -boot d
 - **[ark.linux](https://github.com/zamkara/ark.linux)** ISO generation via `archiso` 'n `bootc-image-builder`
 - **[ark-image](https://github.com/zamkara/ark-image)** Base container image defs 'n OS package manifests
 - **[alga](https://github.com/zamkara/alga)** GTK4 Rust frontend for `bootc` install 'n system updates
-- **[ark-aur](https://github.com/zamkara/ark-aur)** Custom repo for pre-compiled AUR packages (including Helium browser)
+- **[ark-aur](https://github.com/zamkara/ark-aur)** Custom repo for pre-compiled AUR packages
 
 ## Docs
 
@@ -153,16 +152,14 @@ fastfetch
 ├── /etc                   Config (mutable, 3-way merged on updates)
 ├── /var                   Variable data, user home (mutable)
 ├── /usr                   Immutable system binaries 'n libraries
-└── /opt                   Additional immutable applications (e.g. Helium browser)
+└── /opt                   Additional immutable applications
 ```
 
 ## Powered by
 
-- **[Pods](https://github.com/marhkb/pods)** GTK4+Rust Podman frontend — UI inspiration for Alga's container management layer
 - **[DistroShelf](https://github.com/ranfdev/DistroShelf)** GTK4 GUI for Distrobox — shaped how Distrobox integration's hangin' together in-session
 - **[MoreWaita](https://github.com/somepaulo/MoreWaita)** Expanded Adwaita icon theme — keepin' the desktop consistent 'n cohesive outta the box
 - **[nixpkgs](https://github.com/nixos/nixpkgs)** The Nix package collection — powerin' declarative host package management
-- **[Helium](https://github.com/imputnet/helium-linux)** De-Googled Chromium fork — default browser
 
 ## Credits
 
