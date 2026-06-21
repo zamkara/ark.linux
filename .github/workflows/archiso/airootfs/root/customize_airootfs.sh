@@ -45,6 +45,11 @@ systemctl enable gdm NetworkManager
 systemctl set-default graphical.target
 systemctl mask ostree-prepare-root.service
 
+# Ensure Plymouth is enabled for live ISO boot splash
+# (removed from initramfs HOOKS, now started by systemd after switch_root)
+systemctl unmask plymouth-start.service
+systemctl enable plymouth-start.service
+
 # Disable GNOME Initial Setup for the live ark user (not for installed system)
 mkdir -p /home/ark/.config
 echo "yes" > /home/ark/.config/gnome-initial-setup-done
