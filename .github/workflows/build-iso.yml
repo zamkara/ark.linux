@@ -270,6 +270,11 @@ jobs:
         with:
           name: ark-iso-internal
           path: out/
+      - name: Delete existing release if present
+        run: gh release delete "build-${{ github.sha }}" --yes --cleanup-tag 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Nightly Release
         uses: softprops/action-gh-release@v2
         with:
