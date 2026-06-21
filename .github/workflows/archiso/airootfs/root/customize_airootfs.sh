@@ -50,5 +50,32 @@ mkdir -p /home/ark/.config
 echo "yes" > /home/ark/.config/gnome-initial-setup-done
 chown -R 10000:10000 /home/ark
 
+# Mask pacman-related services before removing binaries
+systemctl mask pacman-init.service etc-pacman.d-gnupg.mount choose-mirror.service reflector.service reflector.timer
+
+# Remove pacman — not needed in live ISO, alga installs via bootc
+rm -rf \
+    /usr/bin/pacman* \
+    /usr/bin/makepkg* \
+    /usr/bin/repo-add \
+    /usr/bin/repo-elephant \
+    /usr/bin/repo-remove \
+    /usr/bin/testpkg \
+    /usr/bin/vercmp \
+    /usr/lib/libalpm.so* \
+    /usr/include/alpm* \
+    /usr/lib/pkgconfig/libalpm.pc \
+    /usr/share/bash-completion/completions/pacman* \
+    /usr/share/bash-completion/completions/makepkg* \
+    /usr/share/zsh/site-functions/_pacman* \
+    /usr/share/man/man8/pacman* \
+    /usr/share/man/man8/makepkg* \
+    /usr/share/man/man8/repo-* \
+    /usr/share/man/man8/vercmp* \
+    /usr/share/man/man8/testpkg* \
+    /etc/pacman.conf \
+    /etc/pacman.d/ \
+    /var/lib/pacman/
+
 # Rebuild initramfs so the patched hook is included!
 mkinitcpio -P

@@ -1,7 +1,7 @@
 # Signature: emFta2FyYQ==
 [User]
 Language=en_US.UTF-8
-Session=gnome-kiosk-script-wayland
+Session=gnome
 PasswordHint=
 Icon=
 SystemAccount=false
