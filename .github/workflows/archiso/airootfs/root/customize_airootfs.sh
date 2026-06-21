@@ -78,7 +78,6 @@ rm -rf \
     /usr/share/man/man8/repo-* \
     /usr/share/man/man8/vercmp* \
     /usr/share/man/man8/testpkg* \
-    /etc/pacman.conf \
     /etc/pacman.d/ \
     /var/lib/pacman/
 
