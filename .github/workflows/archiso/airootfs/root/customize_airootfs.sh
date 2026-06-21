@@ -78,8 +78,7 @@ rm -rf \
     /usr/share/man/man8/repo-* \
     /usr/share/man/man8/vercmp* \
     /usr/share/man/man8/testpkg* \
-    /etc/pacman.d/ \
-    /var/lib/pacman/
+    /etc/pacman.d/hooks/
 
 # Rebuild initramfs so the patched hook is included!
 mkinitcpio -P
