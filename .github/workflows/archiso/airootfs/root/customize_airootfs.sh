@@ -51,7 +51,12 @@ echo "yes" > /home/ark/.config/gnome-initial-setup-done
 chown -R 10000:10000 /home/ark
 
 # Mask pacman-related services before removing binaries
-systemctl mask pacman-init.service etc-pacman.d-gnupg.mount choose-mirror.service reflector.service reflector.timer
+# ln -sf used instead of systemctl mask: pacman-init.service, etc-pacman.d-gnupg.mount,
+# choose-mirror.service already exist as regular files in /etc/systemd/system/ so
+# systemctl mask errors with "File already exists"; ln -sf forces replacement
+for _unit in pacman-init.service etc-pacman.d-gnupg.mount choose-mirror.service reflector.service reflector.timer; do
+    ln -sf /dev/null "/etc/systemd/system/$_unit"
+done
 
 # Remove pacman — not needed in live ISO, alga installs via bootc
 rm -rf \
