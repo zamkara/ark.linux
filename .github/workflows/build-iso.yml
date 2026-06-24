@@ -279,11 +279,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.sha }}
-          name: "ark linux Build (${{ github.sha }})"
+          name: "${{ github.sha }}"
           body: |
             # Ark Linux Build ${{ github.sha }}
-            
-            Automated installer build for Ark Linux.
             
             ---
             
@@ -292,19 +290,8 @@ jobs:
             **Commit:** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
             
             **Downloads:**
-            - GitHub Assets (below)
-            - Alternative: [${{ needs.upload-mirror.outputs.DOWNLOAD_URL }}](https://ranoz.gg) *(expires ${{ needs.upload-mirror.outputs.EXPIRATION_DATE }})*
-            
-            ---
-            
-            ## What's Inside
-            
-            This ISO includes:
-            - **Archlinux base** — latest packages as of build time
-            - **Alga** — GTK4 installer, written in Rust
-            - **ark-aur** — custom packages and configurations
-            - **systemd-boot with BLS** — A/B slot deployment
-            - **Plymouth** — minimal boot theming
+            [Mirror Link](${{ needs.upload-mirror.outputs.DOWNLOAD_URL }})
+            > Expires ${{ needs.upload-mirror.outputs.EXPIRATION_DATE }}
             
             ---
             
@@ -324,9 +311,6 @@ jobs:
             
             [View recent commits](https://github.com/${{ github.repository }}/commits/main)
             
-            ---
-            
-            **Note:** This is an automated nightly build. For stability and features, refer to documentation in the main repository.
           files: out/ark-installer.iso
           prerelease: false
           make_latest: true
