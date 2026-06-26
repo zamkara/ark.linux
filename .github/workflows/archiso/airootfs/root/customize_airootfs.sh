@@ -45,8 +45,8 @@ systemctl enable gdm NetworkManager
 systemctl set-default graphical.target
 systemctl mask ostree-prepare-root.service
 
-# Ensure Plymouth is enabled for live ISO boot splash
-# (removed from initramfs HOOKS, now started by systemd after switch_root)
+# Override ark-system-tweaks bgrt theme — use spinner for live ISO
+sed -i 's/Theme=bgrt/Theme=spinner/' /etc/plymouth/plymouthd.conf
 systemctl unmask plymouth-start.service
 systemctl enable plymouth-start.service
 
