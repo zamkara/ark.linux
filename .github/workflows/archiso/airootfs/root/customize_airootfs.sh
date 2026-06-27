@@ -45,8 +45,8 @@ systemctl enable gdm NetworkManager
 systemctl set-default graphical.target
 systemctl mask ostree-prepare-root.service
 
-# Override ark-system-tweaks bgrt theme — use spinner for live ISO
-sed -i 's/Theme=bgrt/Theme=spinner/' /etc/plymouth/plymouthd.conf
+# Override ark-system-tweaks bgrt theme — use details for live ISO (text-based, works without DRM)
+sed -i 's/Theme=bgrt/Theme=details/' /etc/plymouth/plymouthd.conf
 systemctl unmask plymouth-start.service
 systemctl enable plymouth-start.service
 
