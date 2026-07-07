@@ -29,6 +29,4 @@ file_permissions=(
   ["/etc/sudoers"]="0:0:400"
   ["/etc/locale.gen"]="0:0:644"
   ["/etc/skel/.config/autostart/com.zamkara.alga.desktop"]="0:0:755"
-  ["/usr/local/bin/set-wallpaper.sh"]="0:0:755"
-  ["/etc/skel/.config/autostart/set-wallpaper.desktop"]="0:0:755"
 )

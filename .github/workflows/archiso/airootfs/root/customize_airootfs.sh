@@ -45,8 +45,7 @@ systemctl enable gdm NetworkManager
 systemctl set-default graphical.target
 systemctl mask ostree-prepare-root.service
 
-# Override ark-system-tweaks bgrt theme — use details for live ISO (text-based, works without DRM)
-sed -i 's/Theme=bgrt/Theme=details/' /etc/plymouth/plymouthd.conf
+# Enable Plymouth for boot splash
 systemctl unmask plymouth-start.service
 systemctl enable plymouth-start.service
 

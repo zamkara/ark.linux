@@ -1,5 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Set Solid Black Background
-Exec=gsettings set org.gnome.desktop.background primary-color '#000000'
-NoDisplay=true

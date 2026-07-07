@@ -183,6 +183,22 @@ jobs:
                   break
           EOF
           cd ..
+      - name: Download ark-backgrounds Package
+        run: |
+          cd aur-packages
+          python3 << 'EOF' | wget -qi -
+          import urllib.request, json
+          req = urllib.request.Request(
+              "https://api.github.com/repos/zamkara/ark-backgrounds/releases/latest",
+              headers={"User-Agent": "Ark"}
+          )
+          data = json.loads(urllib.request.urlopen(req).read().decode())
+          for a in data.get("assets", []):
+              if a["name"].endswith(".pkg.tar.zst") and "debug" not in a["name"]:
+                  print(a["browser_download_url"])
+                  break
+          EOF
+          cd ..
       - name: Cache Pacman ISO
         uses: actions/cache@v4
         with:
