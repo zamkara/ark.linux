@@ -1,0 +1,4 @@
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/backgrounds/ark/grid.jxl'
+picture-uri-dark='file:///usr/share/backgrounds/ark/grid.jxl'
+picture-options='zoom'
