@@ -28,7 +28,6 @@ linux-firmware
 mdadm
 mkinitcpio
 mkinitcpio-archiso
-mkinitcpio-nfs-utils
 modemmanager
 mtools
 nano
@@ -38,7 +37,6 @@ ntfs-3g
 parted
 pcsclite
 pv
-reflector
 rsync
 smartmontools
 squashfs-tools
@@ -49,9 +47,7 @@ usbmuxd
 usbutils
 virtualbox-guest-utils-nox
 wireless-regdb
-wireless_tools
 wpa_supplicant
-syslinux
 efibootmgr
 
 ### ark linux
