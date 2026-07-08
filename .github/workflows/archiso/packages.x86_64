@@ -1,72 +1,58 @@
 # Signature: emFta2FyYQ==
-alsa-utils
-amd-ucode
-arch-install-scripts
+
+### Base system
 base
 bash
-bash-completion
+sudo
+linux
+linux-firmware
+amd-ucode
+intel-ucode
+
+### Filesystem & disk tools (used by alga)
 btrfs-progs
 cryptsetup
-dhclient
-dmidecode
-dnsmasq
 dosfstools
 e2fsprogs
 xfsprogs
 exfatprogs
-fatresize
-gpart
-gptfdisk
-hdparm
-hyperv
-intel-ucode
-less
-libfido2
-libusb-compat
-linux
-linux-firmware
-mdadm
-mkinitcpio
-mkinitcpio-archiso
-modemmanager
-mtools
-nano
-nbd
-nfs-utils
-ntfs-3g
 parted
-pcsclite
-pv
-rsync
-smartmontools
-squashfs-tools
-sudo
+gptfdisk
+ntfs-3g
+mtools
+
+### Security (systemd-cryptenroll in alga)
+libfido2
 tpm2-tss
-usb_modeswitch
-usbmuxd
-usbutils
-virtualbox-guest-utils-nox
-wireless-regdb
-wpa_supplicant
+
+### Bootloader (used by alga)
+grub
 efibootmgr
 
-### ark linux
-# Core packages
-# Fonts
-noto-fonts
-noto-fonts-emoji
-# Background and services
+### Initramfs
+mkinitcpio
+mkinitcpio-archiso
+
+### Networking
+networkmanager
+wpa_supplicant
+wireless-regdb
+modemmanager
+usb_modeswitch
+
+### VM guest support
+virtualbox-guest-utils-nox
+spice-vdagent
+hyperv
+
+### Audio
 pipewire
 pipewire-pulse
 pipewire-jack
 pipewire-alsa
 wireplumber
-networkmanager
-# OS installation and tweaks
-python-yaml
-# Spice
-spice-vdagent
-# Desktop
+
+### GNOME desktop
 gdm
 gnome-console
 gnome-control-center
@@ -76,19 +62,25 @@ gnome-session
 gnome-settings-daemon
 gnome-shell
 xorg-server
-grub
+gtk4
+libadwaita
+
+### Fonts
+noto-fonts
+noto-fonts-emoji
+
+### Boot splash
+plymouth
+
+### OS installation mechanism
 bootc
 bootupd
 ostree
 skopeo
 podman
 composefs
-dosfstools
-btrfs-progs
-zenity
-gtk4
-libadwaita
-plymouth
+
+### Ark Linux
 alga
 morewaita-icon-theme
 ark-system-tweaks

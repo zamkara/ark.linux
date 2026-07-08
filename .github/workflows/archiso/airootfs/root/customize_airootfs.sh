@@ -360,6 +360,101 @@ rm -f /usr/bin/dvconnect /usr/bin/dvcont /usr/bin/dubdv /usr/bin/encodedv \
     /usr/bin/ibus /usr/bin/ibus-daemon /usr/bin/ibus-setup \
     /usr/bin/mysofa2json
 
+# lm_sensors / fan control
+rm -f /usr/bin/sensord /usr/bin/sensors /usr/bin/sensors-conf-convert \
+    /usr/bin/sensors-detect /usr/bin/fancontrol /usr/bin/pwmconfig \
+    /usr/bin/pwmdetect /usr/bin/isadump /usr/bin/isaset
+
+# Linux audit tools
+rm -f /usr/bin/auditctl /usr/bin/auditd /usr/bin/augenrules \
+    /usr/bin/aureport /usr/bin/ausearch /usr/bin/ausyscall \
+    /usr/bin/aulast /usr/bin/aulastlog
+
+# PPP / old modem tools
+rm -f /usr/bin/pppd /usr/bin/pppdump /usr/bin/pppoe-discovery \
+    /usr/bin/pppstats /usr/bin/chat /usr/bin/poff /usr/bin/pon
+
+# Team / bonding tools (libteam)
+rm -f /usr/bin/teamd /usr/bin/teamdctl /usr/bin/teamnl /usr/bin/bond2team
+
+# TDB tools (Samba dep)
+rm -f /usr/bin/tdbbackup /usr/bin/tdbdump /usr/bin/tdbrestore /usr/bin/tdbtool
+
+# QMI / MBIM extras (keep mmcli for ModemManager)
+rm -f /usr/bin/qmicli /usr/bin/qmi-firmware-update /usr/bin/qmi-network \
+    /usr/bin/mbimcli /usr/bin/mbim-network
+
+# OBEX / Bluetooth extras
+rm -f /usr/bin/obex-client-tool /usr/bin/obexctl /usr/bin/obex-server-tool \
+    /usr/bin/bluetooth-sendto /usr/bin/boltctl
+
+# HDMI CEC / IR remote tools
+rm -f /usr/bin/cec-compliance /usr/bin/cec-ctl /usr/bin/cec-follower \
+    /usr/bin/ir-ctl /usr/bin/ir-keytable
+
+# EDID / display tools
+rm -f /usr/bin/edid-decode /usr/bin/di-edid-decode
+
+# CD / optical tools
+rm -f /usr/bin/cdda-player /usr/bin/cd-drive /usr/bin/cd-info \
+    /usr/bin/cd-read /usr/bin/cd-paranoia /usr/bin/cd-create-profile \
+    /usr/bin/cd-fix-profile /usr/bin/cd-iccdump /usr/bin/cd-it8 \
+    /usr/bin/iso-info /usr/bin/iso-read
+
+# Tcl / Lua interpreters
+rm -f /usr/bin/tclsh /usr/bin/tclsh8.6 \
+    /usr/bin/lua /usr/bin/lua5.4 /usr/bin/lua5.5 \
+    /usr/bin/luac /usr/bin/luac5.4 /usr/bin/luac5.5
+
+# cracklib tools
+rm -f /usr/bin/cracklib-check /usr/bin/cracklib-format /usr/bin/cracklib-packer \
+    /usr/bin/cracklib-unpacker /usr/bin/cracklib-update /usr/bin/create-cracklib-dict
+
+# CRIU (checkpoint/restore)
+rm -f /usr/bin/criu /usr/bin/criu-ns /usr/bin/compel /usr/bin/crit
+
+# ALSA extra CLI tools (PipeWire handles audio)
+rm -f /usr/bin/alsabat /usr/bin/alsabat-test.sh /usr/bin/alsa-info.sh \
+    /usr/bin/alsaloop /usr/bin/alsatplg /usr/bin/alsaucm \
+    /usr/bin/iecset /usr/bin/axfer /usr/bin/amidi /usr/bin/amuFormat.sh \
+    /usr/bin/aconnect /usr/bin/aplaymidi /usr/bin/aplaymidi2 \
+    /usr/bin/arecordmidi /usr/bin/arecordmidi2 \
+    /usr/bin/aseqdump /usr/bin/aseqnet /usr/bin/aseqsend \
+    /usr/bin/aserver /usr/bin/speaker-test /usr/bin/midicat \
+    /usr/bin/aplay /usr/bin/arecord \
+    /usr/bin/alsamixer /usr/bin/alsactl /usr/bin/alsaucm \
+    /usr/bin/nhlt-dmic-info /usr/bin/conplay
+
+# Misc tools not needed in installer
+rm -f /usr/bin/amdgpu_stress \
+    /usr/bin/scmp_sys_resolver \
+    /usr/bin/gssdp-device-sniffer \
+    /usr/bin/WebKitWebDriver \
+    /usr/bin/volume_key \
+    /usr/bin/stunbdc /usr/bin/stund \
+    /usr/bin/psl /usr/bin/psl-make-dafsa \
+    /usr/bin/gsf /usr/bin/gsf-office-thumbnailer /usr/bin/gsf-vba-dump \
+    /usr/bin/xmlcatalog /usr/bin/xmllint /usr/bin/xmlwf \
+    /usr/bin/xsltproc /usr/bin/xslt-config /usr/bin/xml2-config \
+    /usr/bin/sim_client /usr/bin/sim_server \
+    /usr/bin/mmc-tool /usr/bin/monitor-sensor \
+    /usr/bin/eapol_test /usr/bin/wiper.sh \
+    /usr/bin/g13 /usr/bin/g13-syshelp \
+    /usr/bin/healthd /usr/bin/ultrabayd \
+    /usr/bin/sendiso /usr/bin/dumpiso \
+    /usr/bin/bscalc /usr/bin/spit \
+    /usr/bin/gupnp-binding-tool-1.6 \
+    /usr/bin/gupnp-dlna-info-2.0 /usr/bin/gupnp-dlna-ls-profiles-2.0
+
+# Additional /usr/share directories (deps that came in)
+rm -rf /usr/share/gdb
+rm -rf /usr/share/cracklib
+rm -rf /usr/share/dhclient
+rm -rf /usr/share/dnsmasq
+rm -rf /usr/share/mdadm
+rm -rf /usr/share/audit-rules
+rm -rf /usr/share/pkgconfig
+
 # ── END DEBLOAT ─────────────────────────────────────────────────────────────────
 
 # Rebuild initramfs so the patched hook is included!
