@@ -132,7 +132,6 @@ rm -rf /usr/share/wayland-eglstream
 rm -rf /usr/share/factory
 rm -rf /usr/share/ladspa
 rm -rf /usr/share/sounds
-rm -rf /usr/share/pixmaps
 
 # Kerberos
 rm -f /usr/bin/k5srvutil /usr/bin/kadmin /usr/bin/kadmind /usr/bin/kadmin.local \
