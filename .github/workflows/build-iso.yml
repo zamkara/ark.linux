@@ -250,26 +250,51 @@ jobs:
       - name: Upload to Ranoz
         id: ranoz-upload
         run: |
+          # disable "exit on error" so upload problems don't fail the job
+          set +e
+
           FILE_PATH="out/ark-installer.iso"
           FILENAME="ark-installer-${{ github.sha }}.iso"
+
+          if [ ! -f "$FILE_PATH" ]; then
+            echo "Ranoz: file not found, skipping mirror" >&2
+            echo "DOWNLOAD_URL=" >> $GITHUB_OUTPUT
+            echo "EXPIRATION_DATE=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           SIZE=$(stat -c%s "$FILE_PATH")
 
           RESPONSE=$(curl -s -X POST https://ranoz.gg/api/v1/files/upload_url -H "Content-Type: application/json" -d "{
             \"filename\": \"$FILENAME\",
             \"size\": $SIZE
           }")
-          
-          UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.data.upload_url')
-          FILE_ID=$(echo "$RESPONSE" | jq -r '.data.id')
+
+          UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.data.upload_url // empty')
+          FILE_ID=$(echo "$RESPONSE" | jq -r '.data.id // empty')
           FILE_URL=$(echo "$RESPONSE" | jq -r '.data.url // empty')
-          
-          if [ -z "$FILE_URL" ]; then
-            FILE_URL="https://ranoz.gg/api/v1/files/$FILE_ID"
+
+          if [ -z "$UPLOAD_URL" ]; then
+            echo "Ranoz: failed to get upload URL, skipping mirror" >&2
+            echo "DOWNLOAD_URL=" >> $GITHUB_OUTPUT
+            echo "EXPIRATION_DATE=" >> $GITHUB_OUTPUT
+            exit 0
           fi
-          
+
           echo "Uploading $FILENAME ($SIZE bytes)..."
           curl -T "$FILE_PATH" "$UPLOAD_URL"
-          
+          UPLOAD_EXIT=$?
+          if [ $UPLOAD_EXIT -ne 0 ]; then
+            echo "Ranoz: upload failed (curl exit $UPLOAD_EXIT), skipping mirror" >&2
+            echo "DOWNLOAD_URL=" >> $GITHUB_OUTPUT
+            echo "EXPIRATION_DATE=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [ -z "$FILE_URL" ] && [ -n "$FILE_ID" ]; then
+            FILE_URL="https://ranoz.gg/api/v1/files/$FILE_ID"
+          fi
+
           EXP_DATE=$(date -d "+1 month" "+%d %B %Y")
           echo "DOWNLOAD_URL=$FILE_URL" >> $GITHUB_OUTPUT
           echo "EXPIRATION_DATE=$EXP_DATE" >> $GITHUB_OUTPUT
