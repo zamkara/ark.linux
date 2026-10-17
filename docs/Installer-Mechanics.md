@@ -15,7 +15,7 @@ Partition detection uses `lsblk -rno PATH` with `grep -vxF` (exact whole-line ma
 
 ## 2. Btrfs Subvolumes
 
-After formatting, Alga creates 8 btrfs subvolumes before running `bootc install to-filesystem`:
+After formatting, Alga creates 16 btrfs subvolumes before running `bootc install to-filesystem`:
 
 | Subvolume | Mount Point | Notes |
 |-----------|------------|-------|
@@ -27,6 +27,14 @@ After formatting, Alga creates 8 btrfs subvolumes before running `bootc install 
 | `@tmp` | `/tmp` | Volatile temp |
 | `@snapshots` | `/.snapshots` | Timeshift snapshot target |
 | `@opt` | `/opt` | Optional software |
+| `@nix` | `/nix` | Nix packages |
+| `@orundum` | `/orundum` | Container storage |
+| `@agents` | `/agents` | Agent workspace and state |
+| `@share` | `/var/share` | Shared desktop assets |
+| `@games` | `/var/games` | Game data |
+| `@log-user` | `/var/log/user` | User logs |
+| `@flatpak` | `/var/lib/flatpak` | Flatpak packages |
+| `@containers` | `/var/lib/containers` | System containers |
 
 All subvolumes are mounted with `compress=zstd,noatime`. Mount order matters: `@var` is mounted before its children (`@var-log`, `@var-cache`, `@var-tmp`) so mountpoints are created inside `@var`, not inside `@`.
 
@@ -65,5 +73,16 @@ Upon receiving a cancellation signal, Alga:
 3. Runs `wipefs -af` to erase all filesystem signatures.
 4. Executes `dd if=/dev/zero of=<DISK> bs=1M count=10` to destroy GPT structures.
 5. Issues `partprobe` to force the kernel to re-read the cleared partition table.
-</content>
-</invoke>
+
+
+## Agent workspaces
+
+Alga creates and mounts `@agents` and writes its entry to the installed
+deployment's fstab. The matching ark-image supplies the mount point, storage
+initialization service, user provisioning, and launcher. The live ISO itself
+does not create persistent agent workspaces.
+
+Release a compatible payload and Alga package before rebuilding the ISO. Test
+first login and a second account after installation, then reboot and roll back
+the OS to verify that Work persists. Existing Work migration and recovery are
+handled by `ark-agent`, not by repartitioning an installed machine.

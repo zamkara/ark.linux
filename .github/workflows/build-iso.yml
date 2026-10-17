@@ -12,8 +12,12 @@ on:
         default: true
         type: boolean
 
+concurrency:
+  group: ark-iso-release
+  cancel-in-progress: false
+
 env:
-  CACHE_KEY_PREFIX: iso-digest
+  CACHE_KEY_PREFIX: iso-digest-v2
 
 jobs:
   check-digest:
@@ -26,51 +30,40 @@ jobs:
       reason: ${{ steps.decide.outputs.reason }}
       digest: ${{ steps.digest.outputs.value }}
       aur-sha: ${{ steps.aur.outputs.sha }}
+      aur-release-id: ${{ steps.aur.outputs.release-id }}
       alga-sha: ${{ steps.alga.outputs.sha }}
+      alga-url: ${{ steps.alga.outputs.url }}
     steps:
+      - uses: actions/checkout@v6
       - name: Get current archlinux:latest digest
         id: digest
         run: |
-          DIGEST=$(curl -sS \
-            -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
-            "https://registry.hub.docker.com/v2/library/archlinux/manifests/latest" 2>/dev/null | \
-            jq -r '.config.digest // empty')
-          echo "value=${DIGEST:-unknown}" >> $GITHUB_OUTPUT
-          echo "Current archlinux digest: ${DIGEST:-unknown}"
+          TOKEN=$(curl -fsS 'https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/archlinux:pull' | jq -er '.token')
+          DIGEST=$(curl -fsSI \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json' \
+            https://registry-1.docker.io/v2/library/archlinux/manifests/latest | \
+            awk 'tolower($1) == "docker-content-digest:" {gsub("\r", "", $2); print $2}')
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || { echo 'Missing Arch image digest' >&2; exit 1; }
+          echo "value=$DIGEST" >> "$GITHUB_OUTPUT"
 
-      - name: Check ark-aur latest commit
+      - name: Check published ark-aur release
         id: aur
-        run: |
-          SHA=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/zamkara/ark-aur/commits/main 2>/dev/null | \
-            jq -r '.sha // empty')
-          echo "sha=${SHA:-unknown}" >> $GITHUB_OUTPUT
-          if [ -n "$SHA" ]; then
-            STATUS=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/zamkara/ark-aur/commits/$SHA/status 2>/dev/null | \
-              jq -r '.state // empty')
-            echo "ci=${STATUS:-unknown}" >> $GITHUB_OUTPUT
-          else
-            echo "ci=unknown" >> $GITHUB_OUTPUT
-          fi
-          echo "ark-aur: sha=$SHA ci=$STATUS"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/workflows/download-aur-release.py --kind identity
 
-      - name: Check alga latest commit
+      - name: Check published alga release
         id: alga
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          SHA=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/zamkara/alga/commits/main 2>/dev/null | \
-            jq -r '.sha // empty')
-          echo "sha=${SHA:-unknown}" >> $GITHUB_OUTPUT
-          if [ -n "$SHA" ]; then
-            STATUS=$(curl -sS -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/zamkara/alga/commits/$SHA/status 2>/dev/null | \
-              jq -r '.state // empty')
-            echo "ci=${STATUS:-unknown}" >> $GITHUB_OUTPUT
-          else
-            echo "ci=unknown" >> $GITHUB_OUTPUT
-          fi
-          echo "alga: sha=$SHA ci=$STATUS"
+          DATA=$(gh api repos/zamkara/alga/releases/latest)
+          ID=$(printf '%s' "$DATA" | jq -er '.id')
+          URL=$(printf '%s' "$DATA" | jq -er '[.assets[] | select(.name | endswith(".pkg.tar.zst")) | select(.name | contains("-debug-") | not)] | if length == 1 then .[0].browser_download_url else error("Expected one release package") end')
+          echo "sha=$ID" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "ci=success" >> "$GITHUB_OUTPUT"
 
       - name: Restore cached digest
         id: cache-restore
@@ -153,36 +146,16 @@ jobs:
       - name: Set up dependencies
         run: sudo apt-get update && sudo apt-get install -y podman wget curl jq
       - name: Download AUR packages
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p aur-packages
-          cd aur-packages
-          python3 << 'EOF' | wget -qi -
-          import urllib.request, json
-          req = urllib.request.Request("https://api.github.com/repos/zamkara/ark-aur/releases/latest", headers={"User-Agent": "Ark"})
-          data = json.loads(urllib.request.urlopen(req).read().decode())
-          for a in data.get("assets", []):
-              if a["name"].endswith(".pkg.tar.zst"):
-                  print(a["browser_download_url"])
-          EOF
-          echo "Downloaded packages:"
-          ls -lh
-          cd ..
+          python3 .github/workflows/download-aur-release.py --kind packages \
+            --release-id '${{ needs.check-digest.outputs.aur-release-id }}' \
+            --destination aur-packages
       - name: Download Alga Package
-        run: |
-          cd aur-packages
-          python3 << 'EOF' | wget -qi -
-          import urllib.request, json
-          req = urllib.request.Request(
-              "https://api.github.com/repos/zamkara/alga/releases/latest",
-              headers={"User-Agent": "Ark"}
-          )
-          data = json.loads(urllib.request.urlopen(req).read().decode())
-          for a in data.get("assets", []):
-              if a["name"].endswith(".pkg.tar.zst") and "debug" not in a["name"]:
-                  print(a["browser_download_url"])
-                  break
-          EOF
-          cd ..
+        env:
+          PACKAGE_URL: ${{ needs.check-digest.outputs.alga-url }}
+        run: curl -fL --retry 3 --connect-timeout 15 --max-time 300 "$PACKAGE_URL" -o aur-packages/alga.pkg.tar.zst
       - name: Download ark-backgrounds Package
         run: |
           cd aur-packages
@@ -219,6 +192,7 @@ jobs:
         with:
           name: ark-iso-internal
           path: out/ark-installer.iso
+          if-no-files-found: error
 
   upload-github:
     needs: build-iso
@@ -234,6 +208,7 @@ jobs:
         with:
           name: ark-iso
           path: out/ark-installer.iso
+          if-no-files-found: error
 
   upload-mirror:
     needs: build-iso
@@ -311,6 +286,23 @@ jobs:
         with:
           name: ark-iso-internal
           path: out/
+      - name: Wait for compatible payload publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATE=pending
+          for attempt in $(seq 1 60); do
+            STATE=$(gh api 'repos/zamkara/ark-image/actions/workflows/build-payload.yml/runs?branch=main&per_page=1' \
+              --jq '.workflow_runs[0] | if .status == "completed" then .conclusion else .status end')
+            case "$STATE" in
+              success) break ;;
+              failure|cancelled|timed_out|action_required|stale)
+                echo "Payload publication failed: $STATE" >&2; exit 1 ;;
+              *) echo "Waiting for payload publication: $STATE"; sleep 30 ;;
+            esac
+          done
+          [[ "$STATE" == success ]] || { echo 'Timed out waiting for payload publication' >&2; exit 1; }
+
       - name: Delete existing release if present
         run: gh release delete "build-${{ github.sha }}" --yes --cleanup-tag 2>/dev/null || true
         env:
